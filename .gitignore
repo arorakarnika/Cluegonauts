@@ -1,0 +1,6 @@
+/node_modules
+*/__pycache__/*
+cluegonauts/app/__pycache__/*
+cluegonauts/clueless/__pycache__/*
+
+cluegonauts/db.sqlite3
