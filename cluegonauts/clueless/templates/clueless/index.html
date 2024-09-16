@@ -15,12 +15,9 @@
                 </span>
             </div>
             <select id="player-select" class="select select-primary w-full max-w-xs" control-id="ControlID-1">
-                <option value="Miss Scarlett">Miss Scarlett</option>
-                <option value="Colonel Mustard">Colonel Mustard</option>
-                <option value="Mrs. Peacock">Mrs. Peacock</option>
-                <option value="Mr. Green">Mr. Green</option>
-                <option value="Dr. Orchid">Dr. Orchid</option>
-                <option value="Professor Plum">Professor Plum</option>
+                {% for player in char_choices %}
+                <option {% if player.selected is False %} hidden {% endif %} value="{{ player.id }}">{{ player.name }}</option>
+                {% endfor %}
                 
             </select>
             <div class="label">
@@ -63,6 +60,9 @@
         const playerLog = document.querySelector('#player-log');
         playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
         playerLog.scrollTop = playerLog.scrollHeight;
+        // Set selected player to hidden in dropdown
+        document.querySelector('#player-select option[value="' + data.char_selected + '"]').hidden = true;
+        
     };
 
     activitySocket.onclose = function (e) {
@@ -72,9 +72,14 @@
     document.querySelector('#player-submit').onclick = function (e) {
         const selectedPlayer = document.querySelector('#player-select').value;
         activitySocket.send(JSON.stringify({
-            'message': selectedPlayer + ' has joined the game.'
+            'message': selectedPlayer + ' has joined the game.',
+            'char_selected': selectedPlayer
         }));
     };
+
+
+
+
 
 </script>
 
