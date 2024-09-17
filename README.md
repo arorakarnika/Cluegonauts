@@ -45,11 +45,14 @@ Any images, compiled css, compiled javascript, or other static files should be i
 - Open pull requests against the main branch. NEVER push new features to the main branch without a review.
 - Pull requests require at least one approving review to merge.
 - Development work should be done in feature branches.
-- We will use the squash and merge strategy to merge pull requests into the main branch.
+- Use the squash and merge strategy to merge pull requests into the main branch. Feature branches should be deleted after all changes are merged.
 - Both the reviewer and the author are responsible for testing and ensuring that all PRs are functional before being merged.
 - Follow best development practices for commit messages, creating tests, etc.
 - Do not check in unnecessary files or secrets into the repository.
 - Review the documentation under [References](#references) for more information.
+- Run `ruff check --fix` and to use ruff to automatically lint your code before committing changes/ opening a pull request. This helps maintain code quality and readability. Ruff will lint and apply fixes according to the configuration in [pyproject.toml](pyproject.toml)
+- Run `poetry lock` if you added packages using `poetry add` before committing changes. 
+
 
 ## Setup Instructions
 
@@ -65,7 +68,7 @@ If using homebrew, you can use `brew install pipx` and `pipx install poetry` to 
 
 ## Running the Django App
 
-Run the application using `poetry run python manage.py runserver`. The application will be served on `http://127.0.0.1:8000/clueless` in your browser.
+Switch into the `cluegonauts/` directory and run the application using `poetry run python manage.py runserver`. The application will be served on `http://127.0.0.1:8000/clueless` in your browser.
 
 > Note: You may see a warning saying that you have unapplied migrations. This is not necessary as it just sets up the underlying database which we will not be using, and this warning can be safely ignored.
 
