@@ -13,7 +13,7 @@ class GamePlayersConsumer(WebsocketConsumer):
         )
         self.accept()
 
-    def disconnect(self, close_code):
+    def disconnect(self):
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name, self.channel_name
         )

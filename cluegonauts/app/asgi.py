@@ -18,7 +18,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
 
 django_asgi_app = get_asgi_application()
 
-from clueless.routing import websocket_urlpatterns
+# This can only be imported after the Django setup is complete
+# The noqa comment is to ignore the flake8 error for the import not being at the top
+from clueless.routing import websocket_urlpatterns  # noqa: E402
 
 application = ProtocolTypeRouter(
     {
