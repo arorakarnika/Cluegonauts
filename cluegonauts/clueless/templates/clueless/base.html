@@ -1,0 +1,43 @@
+<!-- clueless/templates/clueless/index.html -->
+{% load static %}
+
+<!DOCTYPE html>
+<html data-theme="cupcake">
+
+<head>
+    <meta charset="utf-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Stylesheets, Icons, Fonts, etc.-->
+
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.12/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body>
+    <main>
+
+        <!-- Logo and Team Name -->
+        <div class="navbar bg-base-100">
+            <div tabindex="0">
+                <img src="{% static 'clueless/images/logo-transparent.png' %}" alt="" width="250" height="150">
+            </div>
+            <div class="navbar-center">
+                <a class="btn btn-ghost text-xl" href="#/clueless">Clue-Less</a>
+            </div>
+        </div>
+
+        </main>
+
+        {% block content %}
+        {% endblock %}
+
+</body>
+
+{% block script %}
+{% endblock %}
+
+
+</html>

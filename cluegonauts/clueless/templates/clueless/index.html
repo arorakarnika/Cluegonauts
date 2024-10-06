@@ -1,96 +1,81 @@
 <!-- clueless/templates/clueless/index.html -->
+{% extends 'clueless/base.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html>
+{% block content %}
 
-<head>
-    <meta charset="utf-8" />
+<!-- Main Content -->
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Stylesheets, Icons, Fonts, etc.-->
-
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.12/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-
-</head>
-
-<body>
-    <main>
-        <!-- Navigation Bar -->
-
-        <!--- Logo and Team Name -->
-        <div class="navbar bg-base-100">
-            <div tabindex="0" role="button" class="btn btn-ghost">
-                <img src="{% static 'clueless/images/logo-transparent.png' %}" alt="" width="250" height="150"
-                    href="#/clueless">
-
+<div class="container mx-auto">
+    <div class="grid grid-cols-3">
+        <div class="col-span-1">
+            <div class="label">
+                <span class="label-text">
+                    Which player would you like to be?
+                </span>
             </div>
-            <div class="navbar-center">
-                <a class="btn btn-ghost text-xl">Clue-Less</a>
+            <select id="player-select" class="select select-primary w-full max-w-xs" control-id="ControlID-1">
+                <option value="Miss Scarlett">Miss Scarlett</option>
+                <option value="Colonel Mustard">Colonel Mustard</option>
+                <option value="Mrs. Peacock">Mrs. Peacock</option>
+                <option value="Mr. Green">Mr. Green</option>
+                <option value="Dr. Orchid">Dr. Orchid</option>
+                <option value="Professor Plum">Professor Plum</option>
+                
+            </select>
+            <div class="label">
+                <button id="player-submit" class="btn btn-neutral"> Select Character </button>
             </div>
         </div>
+        <div class="col-span-2">
 
-        <!-- Main Content -->
+            <div id="player-log" class="container mx-auto">
+                <div class="label">
+                    <span class="label-text"> Game Log </span>
+                </div>
+                <!-- Render game log messages from javascript -->
 
-        <div class="container mx-auto">
-            <div class="grid grid-cols-3">
-                <div class="col-span-1">
-                    <h1>Join the Game</h1>
-                    <p>Which player would you like to be?</p>
-                    <select id="player-select" class="select select-primary w-full max-w-xs" control-id="ControlID-1">
-                        <option value="Miss Scarlett">Miss Scarlett</option>
-                        <option value="Colonel Mustard">Colonel Mustard</option>
-                        <option value="Mrs. Peacock">Mrs. Peacock</option>
-                        <option value="Mr. Green">Mr. Green</option>
-                        <option value="Dr. Orchid">Dr. Orchid</option>
-                        <option value="Professor Plum">Professor Plum</option>
-                    </select>
-                    <br>
-                    <button id="player-submit" class="btn btn-neutral"> Enter the Game </button> 
-                    <br>
-                </div>
-                <div class="col-span-2">
-                    <h2>Game Log</h2>
-                    <textarea id="player-log" cols="75" rows="10" class="textarea textarea-success"
-                        control-id="ControlID-3"></textarea>
-                </div>
             </div>
+        </div>
+    </div>
+</div>
 
-    </main>
+{% endblock %}
 
-    <script>
-        document.querySelector('#player-select').focus();
-        document.querySelector('#player-select').onkeyup = function (e) {
-            if (e.key === 'Enter') {  // enter, return
-                document.querySelector('#player-submit').click();
-            }
-        };
+{% block script %}
 
-        const activitySocket = new WebSocket(
-            'ws://'
-            + window.location.host
-            + '/ws/clueless/gameroom/'
-        );
+<script>
+    document.querySelector('#player-select').focus();
+    document.querySelector('#player-select').onkeyup = function (e) {
+        if (e.key === 'Enter') {  // enter, return
+            document.querySelector('#player-submit').click();
+        }
+    };
 
-        activitySocket.onmessage = function (e) {
-            const data = JSON.parse(e.data);
-            document.querySelector('#player-log').value += (data.message + '\n');
-        };
+    const activitySocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/clueless/gameroom/'
+    );
 
-        activitySocket.onclose = function (e) {
-            console.error('Chat socket closed unexpectedly');
-        };
+    activitySocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        const playerLog = document.querySelector('#player-log');
+        playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
+        playerLog.scrollTop = playerLog.scrollHeight;
+    };
 
-        document.querySelector('#player-submit').onclick = function (e) {
-            const selectedPlayer = document.querySelector('#player-select').value;
-            activitySocket.send(JSON.stringify({
-                'message': selectedPlayer + ' has joined the game.'
-            }));
-        };
+    activitySocket.onclose = function (e) {
+        console.error('Chat socket closed unexpectedly');
+    };
 
-    </script>
-</body>
+    document.querySelector('#player-submit').onclick = function (e) {
+        const selectedPlayer = document.querySelector('#player-select').value;
+        activitySocket.send(JSON.stringify({
+            'message': selectedPlayer + ' has joined the game.'
+        }));
+    };
 
-</html>
+</script>
+
+{% endblock %}
