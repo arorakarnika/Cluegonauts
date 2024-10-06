@@ -3,43 +3,43 @@
 
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="utf-8"/>
+    <meta charset="utf-8" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Stylesheets, Icons, Fonts, etc.-->
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.12/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
 
 </head>
+
 <body>
     <main>
-    <!-- Navigation Bar -->
+        <!-- Navigation Bar -->
 
-            <!--- Logo and Team Name -->
-            <nav class="navbar navbar-expand-lg fixed">
-                <div class="container-fluid justify-content-between">
-                    <a class="navbar-brand nav">
-                        <img src="{% static 'clueless/images/logo-transparent.png' %}" alt="" width="250" height="150" href="#/clueless">
-                        
-                    </a>
-                    <h1> Clue-Less </h1>
-                    <div class="collapse navbar-collapse">
-                        
-                    </div>
-                </div>
-            </nav>
+        <!--- Logo and Team Name -->
+        <div class="navbar bg-base-100">
+            <div tabindex="0" role="button" class="btn btn-ghost">
+                <img src="{% static 'clueless/images/logo-transparent.png' %}" alt="" width="250" height="150"
+                    href="#/clueless">
 
-    <!-- Main Content -->
+            </div>
+            <div class="navbar-center">
+                <a class="btn btn-ghost text-xl">Clue-Less</a>
+            </div>
+        </div>
 
-        <div class="container container-fluid">
-            <div class="row row-cols-2"> 
-                <div class="col-md-6">
+        <!-- Main Content -->
+
+        <div class="container mx-auto">
+            <div class="grid grid-cols-3">
+                <div class="col-span-1">
                     <h1>Join the Game</h1>
                     <p>Which player would you like to be?</p>
-                    <select id="player-select" class="form-select">
+                    <select id="player-select" class="select select-primary w-full max-w-xs" control-id="ControlID-1">
                         <option value="Miss Scarlett">Miss Scarlett</option>
                         <option value="Colonel Mustard">Colonel Mustard</option>
                         <option value="Mrs. Peacock">Mrs. Peacock</option>
@@ -48,19 +48,21 @@
                         <option value="Professor Plum">Professor Plum</option>
                     </select>
                     <br>
-                    <input id="player-submit" type="button" value="Enter" class="btn btn-primary"> <br>
+                    <button id="player-submit" class="btn btn-neutral"> Enter the Game </button> 
+                    <br>
                 </div>
-                <div class="col-md-6">
+                <div class="col-span-2">
                     <h2>Game Log</h2>
-                    <textarea id="player-log" cols="100" rows="20" class="form-control"></textarea><br>
+                    <textarea id="player-log" cols="75" rows="10" class="textarea textarea-success"
+                        control-id="ControlID-3"></textarea>
                 </div>
             </div>
-        
+
     </main>
 
     <script>
         document.querySelector('#player-select').focus();
-        document.querySelector('#player-select').onkeyup = function(e) {
+        document.querySelector('#player-select').onkeyup = function (e) {
             if (e.key === 'Enter') {  // enter, return
                 document.querySelector('#player-submit').click();
             }
@@ -72,22 +74,23 @@
             + '/ws/clueless/gameroom/'
         );
 
-        activitySocket.onmessage = function(e) {
+        activitySocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
             document.querySelector('#player-log').value += (data.message + '\n');
         };
 
-        activitySocket.onclose = function(e) {
+        activitySocket.onclose = function (e) {
             console.error('Chat socket closed unexpectedly');
         };
 
-        document.querySelector('#player-submit').onclick = function(e) {
+        document.querySelector('#player-submit').onclick = function (e) {
             const selectedPlayer = document.querySelector('#player-select').value;
             activitySocket.send(JSON.stringify({
                 'message': selectedPlayer + ' has joined the game.'
             }));
         };
-        
+
     </script>
 </body>
+
 </html>
