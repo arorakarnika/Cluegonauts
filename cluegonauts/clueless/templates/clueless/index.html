@@ -16,12 +16,12 @@
             </div>
             <select id="player-select" class="select select-primary w-full max-w-xs" control-id="ControlID-1">
                 {% for player in char_choices %}
-                <option {% if player.selected is False %} hidden {% endif %} value="{{ player.id }}">{{ player.name }}</option>
+                <option value="{{ player.id }}" {% if player.selected %} disabled {% endif %} >{{ player.name }}</option>
                 {% endfor %}
                 
             </select>
             <div class="label">
-                <button id="player-submit" class="btn btn-neutral"> Select Character </button>
+                <button id="player-submit" class="btn btn-neutral" aria-controll> Select Character </button>
             </div>
         </div>
         <div class="col-span-2">
@@ -60,8 +60,12 @@
         const playerLog = document.querySelector('#player-log');
         playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
         playerLog.scrollTop = playerLog.scrollHeight;
+        
         // Set selected player to hidden in dropdown
-        document.querySelector('#player-select option[value="' + data.char_selected + '"]').hidden = true;
+        const selectedPlayer = document.querySelector('#player-select option[value="' + data.char_selected + '"]');
+        selectedPlayer.disabled = true;
+        // Unselect the selected player
+
         
     };
 
@@ -70,15 +74,13 @@
     };
 
     document.querySelector('#player-submit').onclick = function (e) {
-        const selectedPlayer = document.querySelector('#player-select').value;
+        const selectedPlayerID = document.querySelector('#player-select').value;
+        const selectedPlayerName = document.querySelector('#player-select option[value="' + selectedPlayerID + '"]').text;
         activitySocket.send(JSON.stringify({
-            'message': selectedPlayer + ' has joined the game.',
-            'char_selected': selectedPlayer
+            'message': selectedPlayerName + ' has joined the game.',
+            'char_selected': selectedPlayerID
         }));
     };
-
-
-
 
 
 </script>
