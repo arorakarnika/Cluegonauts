@@ -5,24 +5,62 @@
 {% block content %}
 
 <!-- Main Content -->
-        <div class="label">
-          <span class="label-text">
-              Where would like like to go?
-          </span>
-        </div>
-        <!-- test message-->
-        <div class="grid grid-rows-3 grid-flow-col gap-5 font-mono text-white text-sm text-center font-bold leading-6 rounded-lg">
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Study</div>
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Ballroom</div>
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Billiards Room</div>
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Dining Room</div>
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Hallway</div>
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Kitchen</div>
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Lounge</div>
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Conservatory</div>
-          <div class="p-20 rounded-xlg shadow-xlg bg-blue-500">Library</div>
-        </div>
-        
+    <div class="container mx-auto">
+      <div class="grid grid-cols-3">
+          <div class="col-span-2">
+              <div class="label">
+                  <span class="text-xl">
+                      What would you like to do:
+                  </span>
+              </div>
+              <select id="player-select" class="select select-primary w-full max-w-xs" control-id="ControlID-1">
+                  <option value="Move to Study">Move to Study</div>
+                  <option value="Move to Ballroom">Move to Ballroom</div>
+                  <option value="Move to Billiards">Move to Billiards Room</div>
+                  <option value="Move to Dining Room">Move to Dining Room</div>
+                  <option value="Move to Hallway">Move to Hallway</div>
+                  <option value="Move to Kitchen">Move to Kitchen</div>
+                  <option value="Move to Lounge">Move to Lounge</div>
+                  <option value="Move to Conservatory">Move to Conservatory</div>
+                  <option value="Move to Library">Move to Library</div>
+                  <option value="action item">Make a suggestion</div>
+                  <option value="action item">Make a Accusation</div>
+              </select>
+              <div class="label">
+                  <button id="player-submit" class="btn btn-neutral"> Select Action </button>
+              </div>
+              <div id="game board" class="grid grid-rows-3 grid-flow-col gap-5 font-mono text-white text-sm text-center font-bold leading-6 rounded-lg">
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Study</div>
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Ballroom</div>
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Billiards Room</div>
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Dining Room</div>
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Hallway</div>
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Kitchen</div>
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Lounge</div>
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Conservatory</div>
+                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Library</div>
+              </div>
+          </div>
+          <div class="col-span-1">
+  
+              <div id="player-log" class="container mx-auto">
+                  <div class="label">
+                      <span class="text-xl"> Game Log </span>
+                  </div>
+                  <!-- Render game log messages from javascript -->
+  
+              </div>
+          </div>
+      </div>
+  </div>
+
+  {% endblock %}
+  
+  {% block script %}
+
+<script>
+   
+</script>
 
 {% endblock %}
         
