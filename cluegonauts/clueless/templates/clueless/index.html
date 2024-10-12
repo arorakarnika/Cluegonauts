@@ -25,6 +25,10 @@
             </select>
             <div class="label">
                 <button id="player-submit" class="btn btn-neutral"> Select Character </button>
+
+                <!-- Start Game Button (disabled by default) -->
+        
+                <input id="start-game" type="button" value="Start Game" class="btn btn-disabled" disabled>
             </div>
         </div>
         <div class="col-span-2">
@@ -58,11 +62,26 @@
         + '/ws/clueless/gameroom/'
     );
 
+    let playerCount = 0;
+
     activitySocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
         const playerLog = document.querySelector('#player-log');
         playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
         playerLog.scrollTop = playerLog.scrollHeight;
+
+        if (data.message.includes('has joined the game')) {
+            playerCount += 1;
+        }
+
+// Enable the "Start Game" button if 2 or more players have joined
+        if (playerCount >= 2) {
+            const startGameButton = document.querySelector('#start-game');
+            startGameButton.disabled = false;
+            startGameButton.classList.remove('btn-disabled');
+            startGameButton.classList.add('btn');
+        }
+
     };
 
     activitySocket.onclose = function (e) {
@@ -73,6 +92,13 @@
         const selectedPlayer = document.querySelector('#player-select').value;
         activitySocket.send(JSON.stringify({
             'message': selectedPlayer + ' has joined the game.'
+        }));
+    };
+
+    document.querySelector('#start-game').onclick = function (e) {
+        const selectedPlayer = document.querySelector('#player-select').value;
+        activitySocket.send(JSON.stringify({
+            'message': selectedPlayer + ' has started the game.'
         }));
     };
 
