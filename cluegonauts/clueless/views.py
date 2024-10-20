@@ -1,30 +1,22 @@
 from django.shortcuts import render
+from .models import GameSession
 
 from .classes import CharacterHandler
 
 def index(request):
-    print(f"Char handler: {request.session.get('char_handler', None)}")
-    char_handler = CharacterHandler(selected=request.session.get("char_handler", None)) if request.session.get("char_handler", None) else CharacterHandler()
+    session_id = request.session.get("game_session", None)
+    if session_id:
+        game_session = GameSession()
+        selected_players = game_session.get_selected_players(session_id)
+        char_handler = CharacterHandler(selected=selected_players)
+    else:
+        char_handler = CharacterHandler()
     char_choices = char_handler.get_all_characters()
     return render( 
-
         request, 
         "clueless/index.html",
         {"char_choices": char_choices}
         )
-
-#TODO: WIP
-def select_character(request):
-    """
-    Store selected characters in session
-    """
-    char_id = request.POST.get("char_id")
-    char_handler = CharacterHandler(selected=request.session.get("char_handler", None)) if request.session.get("char_handler", None) else CharacterHandler()
-    if char_handler.is_available(char_id):
-        char_handler.set_selected(char_id)
-        request.session["char_handler"] = char_handler.serialize_selected()
-        request.session.save()
-    return render(request, "clueless/index.html", {"char_choices": char_handler.get_all_characters()})
 
 def gameb(request):
     return render(request, "clueless/gameb.html")
