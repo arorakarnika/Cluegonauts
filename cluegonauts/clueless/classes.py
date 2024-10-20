@@ -29,23 +29,23 @@ class CharacterHandler:
         for char_id in selected:
             self.set_selected(char_id)
 
-    def is_available(self, id: str) -> bool:
+    def is_available(self, char_id: str) -> bool:
         """
         Check if a character is available for selection
         """
         # Find character with id
-        character = list(filter(lambda x: x.id == id, self.characters))[0]
+        character = list(filter(lambda x: x.id == char_id, self.characters))[0]
 
         return not character.selected # Negate the selected property to check if the character is available
 
 
-    def set_selected(self, id: str):
+    def set_selected(self, char_id: str):
         """
         Set a character as selected
         """
         # Find character with id and set selected to True
         for character in self.characters:
-            if character.id == id:
+            if character.id == char_id:
                 character.selected = True
 
     def get_all_characters(self) -> List[Character]:
