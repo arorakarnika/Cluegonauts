@@ -4,6 +4,14 @@
 
 {% block content %}
 
+<!-- Set session var for char_id -->
+
+{% if char_id %}
+    <script>
+        sessionStorage.setItem('char_id', {{ char_id }});
+    </script>
+{% endif %}
+
 <!-- Main Content -->
     <div class="container mx-auto">
       <div class="grid grid-cols-3">
@@ -43,13 +51,13 @@
           </div>
           <div class="col-span-1">
   
-              <div id="player-log" class="container mx-auto">
-                  <div class="label">
-                      <span class="text-xl"> Game Log </span>
-                  </div>
-                  <!-- Render game log messages from javascript -->
-  
-              </div>
+            <div id="player-log" class="container mx-auto overflow-auto max-h-dvh">
+                <div class="label">
+                    <span class="text-xl"> Game Log </span>
+                </div>
+                <!-- Render game log messages from javascript -->
+
+            </div>
           </div>
       </div>
   </div>
@@ -59,12 +67,11 @@
   {% block script %}
 
 <script>
-    
-    console.log("in gameb");
+   
     const activitySocket = new WebSocket(
         'ws://'
         + window.location.host
-        + '/ws/clueless/gamestate/'
+        + '/ws/clueless/gameplay/'
     );
 
     activitySocket.onmessage = function (e) {
@@ -82,7 +89,25 @@
 
     activitySocket.onclose = function (e) {
         console.error('Chat socket closed unexpectedly');
+    }
+
+    activitySocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const playerLog = document.querySelector('#player-log');
+        playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
+        playerLog.scrollTop = playerLog.scrollHeight;
     };
+
+    document.querySelector('#action-select').onclick = function() {
+        const action = document.querySelector('#player-select').value;
+        {% comment %} const charID = sessionStorage.getItem('char_id'); {% endcomment %}
+
+        activitySocket.send(JSON.stringify({
+            'message': "Selected " + action
+        }));
+    };
+
+
 
 </script>
 
