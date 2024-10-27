@@ -10,6 +10,7 @@ class Character:
     id: str
     image: Optional[str]
     selected: bool = False
+    user_id: Optional[str] = None
 
 @define
 class Card:
@@ -46,7 +47,7 @@ class CharacterHandler:
         return not character.selected # Negate the selected property to check if the character is available
 
 
-    def set_selected(self, char_id: str):
+    def set_selected(self, char_id: str, user_id: Optional[str] = None):
         """
         Set a character as selected
         """
@@ -54,6 +55,7 @@ class CharacterHandler:
         for character in self.characters:
             if character.id == char_id:
                 character.selected = True
+                character.user_id = user_id
 
     def get_all_characters(self) -> List[Character]:
         """

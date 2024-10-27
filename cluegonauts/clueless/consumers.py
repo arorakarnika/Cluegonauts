@@ -2,6 +2,7 @@ import json
 import threading
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+import uuid
 
 from .classes import CardHandler
 from .models import GameSession
@@ -171,3 +172,27 @@ class GameStateConsumer(WebsocketConsumer):
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name, {"type": "status.update", "subtype": "next.player","player":game_session.get_selected_players(session_id)[0] }
         )
+class GameControlConsumer(WebsocketConsumer):
+    def connect(self):
+        self.room_name = "gamesession"
+        self.room_group_name = f"gameroom_{self.room_name}"
+        async_to_sync(self.channel_layer.group_add)(
+            self.room_group_name, self.channel_name
+        )
+        self.accept()
+
+    def disconnect(self, close_code): # noqa: ARG002 ; ignore ruff warning for unused parameter
+        async_to_sync(self.channel_layer.group_discard)(
+            self.room_group_name, self.channel_name
+        )
+
+    def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json["message"]
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name, {"type": "game.log", "message": message}
+        )
+
+    def game_log(self, event):
+        message = event["message"]
+        self.send(text_data=json.dumps({"message": message}))
