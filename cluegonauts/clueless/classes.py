@@ -139,3 +139,59 @@ class HallwayHandler:
         if hallway:
             hallway.set_occupied(status)
 
+class LocationHandler:
+    def __init__(self):
+        """
+        Initialize the location handler with the room and hallway handlers
+        """
+        # Matrix with rooms
+        self.rooms = [[Room(name="Study", id="study"), Room(name="Ballroom", id="ballroom"), Room(name="Billiards Room", id="billiards_room")],
+                      [Room(name="Dining Room", id="dining_room"), Room(name="Hall", id="hall"), Room(name="Kitchen", id="kitchen")],
+                      [Room(name="Lounge", id="lounge"), Room(name="Conservatory", id="conservatory"), Room(name="Library", id="library")]]
+
+        self.hallways = self.create_hallways()
+        
+    def lookup_adjacent(self, room_id: str) -> List[str]:
+        """
+        Lookup adjacent rooms for a given room
+        """
+        # Based on adjacency in the self.rooms matrix, return the adjacent rooms
+        for i in range(3):
+            for j in range(3):
+                if self.rooms[i][j].room_id == room_id:
+                    adjacent = []
+                    if i > 0:
+                        adjacent.append(self.rooms[i-1][j].id)
+                    if i < 2:
+                        adjacent.append(self.rooms[i+1][j].id)
+                    if j > 0:
+                        adjacent.append(self.rooms[i][j-1].id)
+                    if j < 2:
+                        adjacent.append(self.rooms[i][j+1].id)
+        
+                    return adjacent
+
+    def create_hallways(self):
+        """
+        Create hallways between adjacent rooms, add them to the self.rooms matrix
+        """
+        hallways = []
+        for i in range(3):
+            for j in range(3):
+                room = self.rooms[i][j]
+                adjacent = self.lookup_adjacent(room.room_id)
+                for adj in adjacent:
+                    hallway = Hallway(id=f"{room.room_id}_{adj}", name=f"Hallway between {room.name} and {adj}", connected_rooms=[room.room_id, adj])
+
+        return hallways
+
+    def set_occupied(self, room_id: str):
+        """
+        Set the occupancy status of a room
+        """
+        for i in range(3):
+            for j in range(3):
+                if self.rooms[i][j].room_id == room_id:
+                    self.rooms[i][j].is_occupied = True
+
+    
