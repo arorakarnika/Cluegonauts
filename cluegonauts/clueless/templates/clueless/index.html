@@ -59,31 +59,27 @@
         + '/ws/clueless/gameroom/'
     );
 
-    let playerCount = 0;
-
     activitySocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
         const playerLog = document.querySelector('#player-log');
-        playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
-        playerLog.scrollTop = playerLog.scrollHeight;
-        
-        // Set selected player to hidden in dropdown
-        const selectedPlayer = document.querySelector('#player-select option[value="' + data.char_selected + '"]');
-        selectedPlayer.disabled = true;
-        // Unselect the selected player
-
-        
-
-        if (data.message.includes('has joined the game')) {
-            playerCount += 1;
-        }
-
-        // Enable the "Start Game" button if 2 or more players have joined
-        if (playerCount >= 2) {
+        if (data.message == "unlock_start") {
+            // Enable the "Start Game" button
             const startGameButton = document.querySelector('#start-game');
             startGameButton.disabled = false;
             startGameButton.classList.remove('btn-disabled');
             startGameButton.classList.add('btn');
+        } else if (data.message === "redirect_game") {
+            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">Redirecting</div></div>';
+            playerLog.scrollTop = playerLog.scrollHeight;
+            window.location.href = '/clueless/game';
+        } else {
+            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
+            playerLog.scrollTop = playerLog.scrollHeight;
+            
+            // Set selected player to hidden in dropdown
+            const selectedPlayer = document.querySelector('#player-select option[value="' + data.char_selected + '"]');
+            selectedPlayer.disabled = true;
+            // Unselect the selected player
         }
 
     };
@@ -97,7 +93,8 @@
         const selectedPlayerName = document.querySelector('#player-select option[value="' + selectedPlayerID + '"]').text;
         activitySocket.send(JSON.stringify({
             'message': selectedPlayerName + ' has joined the game.',
-            'char_selected': selectedPlayerID
+            'char_selected': selectedPlayerID,
+            'subtype': 'select_player'
         }));
     };
 
@@ -105,9 +102,9 @@
         const selectedPlayer = document.querySelector('#player-select').value;
         activitySocket.send(JSON.stringify({
             'message': selectedPlayer + ' has started the game.',
-            'char_selected': selectedPlayer
+            'char_selected': selectedPlayer,
+            'subtype': 'start_game'
         }));
-        window.location.href = '/clueless/game';
         return false;
     };
 

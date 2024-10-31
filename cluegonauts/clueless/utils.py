@@ -1,5 +1,6 @@
 from .models import GameSession
 from .classes import CharacterHandler
+import websocket
 
 def select_character(char_id: str, session_id: str = None) -> bool:
     """
@@ -25,3 +26,7 @@ def select_character(char_id: str, session_id: str = None) -> bool:
 
     elif not char_handler.is_available(char_id):
         return False, session_id
+
+def connect_game_state_consumer():
+    game_state_consumer_socket = websocket.WebSocketApp('ws://localhost:8000/ws/clueless/gamestate/')
+    game_state_consumer_socket.run_forever()
