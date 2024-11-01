@@ -41,7 +41,7 @@ class GamePlayersConsumer(WebsocketConsumer):
                                            "char_selected": char_id, "session_id": str(session_id)}
                 )
 
-                if not "game_session" in self.scope["session"] and status:
+                if "game_session" not in self.scope["session"] and status:
                     thread = threading.Thread(target=connect_game_state_consumer, daemon=True)
                     thread.start()
                     # convert uuid to string and store in session
@@ -114,9 +114,9 @@ class GameStateConsumer(WebsocketConsumer):
         )
 
     def unlock_start(self, session_id):
-        gameSession = GameSession()
-        sessionPlayerList = gameSession.get_selected_players(session_id)
-        if len(sessionPlayerList) >= 2:
+        game_session = GameSession()
+        session_player_list = game_session.get_selected_players(session_id)
+        if len(session_player_list) >= 2:
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {"type": "status.update", "subtype": "unlock_start"}
