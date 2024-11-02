@@ -83,7 +83,7 @@ class RoomHandler:
         Initialize rooms with properties like names, IDs, and secret passages.
         """
         self.rooms = [
-            Room(name="Study", id="study", has_secret_passage=True, secret_passage_to="library"),
+            # Room(name="Study", id="study", has_secret_passage=True, secret_passage_to="library"),
             Room(name="Ballroom", id="ballroom"),
             Room(name="Billiards Room", id="billiards_room", has_secret_passage=True, secret_passage_to="lounge"),
             Room(name="Dining Room", id="dining_room"),
@@ -115,7 +115,7 @@ class HallwayHandler:
         Initialize hallways with names, IDs, and connected rooms.
         """
         self.hallways = [
-            Hallway(id="hallway_1", name="Hallway between Study and Dining Room", connected_rooms=["study", "dining_room"]),
+            # Hallway(id="hallway_1", name="Hallway between Study and Dining Room", connected_rooms=["study", "dining_room"]),
             Hallway(id="hallway_2", name="Hallway between Dining Room and Lounge", connected_rooms=["dining_room", "lounge"]),
             Hallway(id="hallway_3", name="Hallway between Study and Ballroom", connected_rooms=["study", "ballroom"]),
             Hallway(id="hallway_4", name="Hallway between Dining Room and Hall", connected_rooms=["dining_room", "hall"]),
@@ -146,15 +146,26 @@ class HallwayHandler:
         if hallway:
             hallway.set_occupied(status)
 
+@define
+class Location:
+    location_id: str
+    name: str
+    connected_location: List[str] #Stores location_id of the locations connected to this location
+    is_occupied: bool = False # Default to unoccupied
+    has_secret_passage: bool = False # Default to no secret passage
+    secret_passage_to: Optional[str] = None # Default to no secret passage locations
+
 class LocationHandler:
     def __init__(self):
         """
-        Initialize the location handler with the room and hallway handlers
+        Initialize the location handler with a matrix of the locations (rooms and hallways)
         """
-        # Matrix with rooms
-        self.rooms = [[Room(name="Study", id="study"), Room(name="Ballroom", id="ballroom"), Room(name="Billiards Room", id="billiards_room")],
-                      [Room(name="Dining Room", id="dining_room"), Room(name="Hall", id="hall"), Room(name="Kitchen", id="kitchen")],
-                      [Room(name="Lounge", id="lounge"), Room(name="Conservatory", id="conservatory"), Room(name="Library", id="library")]]
+        # Matrix with locations
+        self.locations = [[Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen"), Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"]), Location(location_id="hall", name="Hall", connected_location=["hallway_1", "hallway_2"]), Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), Location(location_id="lounge", name="Lounge", connected_location=["hallway_2", "hallway_5"], has_secret_passage=True, secret_passage_to="conservatory")],
+                      [Location(location_id="hallway_3", name="Hallway 3", connected_location=["study", "library"]), Location(location_id="blank_1", name="Blank 1", connected_location=["hallway_1", "hallway_6"]), Location(location_id="hallway_4", name="Hallway 4", connected_location=["hall", "billiard room"]), Location(location_id="blank_2", name="Blank 2", connected_location=["hallway_2", "hallway_7"]), Location(location_id="hallway_5", name="Hallway 5", connected_location=["lounge", "dining_room"])],
+                      [Location(location_id="library", name="Library", connected_location=["hallway_3", "hallway_6", "hallway_8"]), Location(location_id="hallway_6", name="Hallway 6", connected_location=["library", "billiard_room"]), Location(location_id="billiard_room", name="Billiard Room", connected_location=["hallway_4", "hallway_7", "hallway_9", "hallway_6"]), Location(location_id="hallway_7", name="Hallway 7", connected_location=["billiard_room", "dining_room"]), Location(location_id="dining_room", name="Dining Room", connected_location=["hallway_5", "hallway_10", "hallway_7"])],
+                      [Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen"), Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"]), Location(location_id="hall", name="Hall", connected_location=["hallway_1", "hallway_2"]), Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), Location(location_id="lounge", name="Lounge", connected_location=["hallway_2", "hallway_5"], has_secret_passage=True, secret_passage_to="conservatory")],
+                      [Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen"), Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"]), Location(location_id="hall", name="Hall", connected_location=["hallway_1", "hallway_2"]), Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), Location(location_id="lounge", name="Lounge", connected_location=["hallway_2", "hallway_5"], has_secret_passage=True, secret_passage_to="conservatory")]]
 
         self.hallways = self.create_hallways()
         
