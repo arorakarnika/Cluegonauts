@@ -61,83 +61,83 @@ class CharacterHandler:
         return [char.id for char in self.characters if char.selected]
     
 
-@define
-class Room:
-    name: str
-    id: str
-    has_secret_passage: bool = False
-    secret_passage_to: Optional[str] = None
-    is_occupied: bool = False
+# @define
+# class Room:
+#     name: str
+#     id: str
+#     has_secret_passage: bool = False
+#     secret_passage_to: Optional[str] = None
+#     is_occupied: bool = False
+#
+#
+# class RoomHandler:
+#     def __init__(self):
+#         """
+#         Initialize rooms with properties like names, IDs, and secret passages.
+#         """
+#         self.rooms = [
+#             # Room(name="Study", id="study", has_secret_passage=True, secret_passage_to="library"),
+#             Room(name="Ballroom", id="ballroom"),
+#             Room(name="Billiards Room", id="billiards_room", has_secret_passage=True, secret_passage_to="lounge"),
+#             Room(name="Dining Room", id="dining_room"),
+#             Room(name="Hall", id="hall"),
+#             Room(name="Kitchen", id="kitchen"),
+#             Room(name="Lounge", id="lounge", has_secret_passage=True, secret_passage_to="billiards_room"),
+#             Room(name="Conservatory", id="conservatory"),
+#             Room(name="Library", id="library", has_secret_passage=True, secret_passage_to="study")
+#         ]
 
-
-class RoomHandler:
-    def __init__(self):
-        """
-        Initialize rooms with properties like names, IDs, and secret passages.
-        """
-        self.rooms = [
-            # Room(name="Study", id="study", has_secret_passage=True, secret_passage_to="library"),
-            Room(name="Ballroom", id="ballroom"),
-            Room(name="Billiards Room", id="billiards_room", has_secret_passage=True, secret_passage_to="lounge"),
-            Room(name="Dining Room", id="dining_room"),
-            Room(name="Hall", id="hall"),
-            Room(name="Kitchen", id="kitchen"),
-            Room(name="Lounge", id="lounge", has_secret_passage=True, secret_passage_to="billiards_room"),
-            Room(name="Conservatory", id="conservatory"),
-            Room(name="Library", id="library", has_secret_passage=True, secret_passage_to="study")
-        ]
-
-@define
-class Hallway:
-    id: str
-    name: str
-    connected_rooms: List[str]  # Stores IDs of the two rooms this hallway connects
-    is_occupied: bool = False  # Default to unoccupied
-
-    def set_occupied(self, status: bool):
-        """
-        Set the occupancy status of the hallway.
-        """
-        self.is_occupied = status
-
-
-
-class HallwayHandler:
-    def __init__(self):
-        """
-        Initialize hallways with names, IDs, and connected rooms.
-        """
-        self.hallways = [
-            # Hallway(id="hallway_1", name="Hallway between Study and Dining Room", connected_rooms=["study", "dining_room"]),
-            Hallway(id="hallway_2", name="Hallway between Dining Room and Lounge", connected_rooms=["dining_room", "lounge"]),
-            Hallway(id="hallway_3", name="Hallway between Study and Ballroom", connected_rooms=["study", "ballroom"]),
-            Hallway(id="hallway_4", name="Hallway between Dining Room and Hall", connected_rooms=["dining_room", "hall"]),
-            Hallway(id="hallway_5", name="Hallway between Lounge and Conservatory", connected_rooms=["lounge", "conservatory"]),
-            Hallway(id="hallway_6", name="Hallway between Ballroom and Hall", connected_rooms=["ballroom", "hall"]),
-            Hallway(id="hallway_7", name="Hallway between Hall and Conservatory", connected_rooms=["hall", "conservatory"]),
-            Hallway(id="hallway_8", name="Hallway between Ballroom and Billiards Room", connected_rooms=["ballroom", "billiards_room"]),
-            Hallway(id="hallway_9", name="Hallway between Hall and Kitchen", connected_rooms=["hall", "kitchen"]),
-            Hallway(id="hallway_10", name="Hallway between Conservatory and Library", connected_rooms=["conservatory", "library"]),
-            Hallway(id="hallway_11", name="Hallway between Billiards Room and Kitchen", connected_rooms=["billiards_room", "kitchen"]),
-            Hallway(id="hallway_12", name="Hallway between Kitchen and Library", connected_rooms=["kitchen", "library"]),
-        ]
-
-    def find_hallway(self, room_id_1: str, room_id_2: str) -> Hallway:
-        """
-        Find a hallway connecting two specific rooms, if it exists.
-        """
-        for hallway in self.hallways:
-            if set(hallway.connected_rooms) == {room_id_1, room_id_2}:
-                return hallway
-        return None
-
-    def set_hallway_occupied(self, hallway_id: str, status: bool):
-        """
-        Set a specific hallway's occupancy status by its ID.
-        """
-        hallway = next((h for h in self.hallways if h.id == hallway_id), None)
-        if hallway:
-            hallway.set_occupied(status)
+# @define
+# class Hallway:
+#     id: str
+#     name: str
+#     connected_rooms: List[str]  # Stores IDs of the two rooms this hallway connects
+#     is_occupied: bool = False  # Default to unoccupied
+#
+#     def set_occupied(self, status: bool):
+#         """
+#         Set the occupancy status of the hallway.
+#         """
+#         self.is_occupied = status
+#
+#
+#
+# class HallwayHandler:
+#     def __init__(self):
+#         """
+#         Initialize hallways with names, IDs, and connected rooms.
+#         """
+#         self.hallways = [
+#             # Hallway(id="hallway_1", name="Hallway between Study and Dining Room", connected_rooms=["study", "dining_room"]),
+#             Hallway(id="hallway_2", name="Hallway between Dining Room and Lounge", connected_rooms=["dining_room", "lounge"]),
+#             Hallway(id="hallway_3", name="Hallway between Study and Ballroom", connected_rooms=["study", "ballroom"]),
+#             Hallway(id="hallway_4", name="Hallway between Dining Room and Hall", connected_rooms=["dining_room", "hall"]),
+#             Hallway(id="hallway_5", name="Hallway between Lounge and Conservatory", connected_rooms=["lounge", "conservatory"]),
+#             Hallway(id="hallway_6", name="Hallway between Ballroom and Hall", connected_rooms=["ballroom", "hall"]),
+#             Hallway(id="hallway_7", name="Hallway between Hall and Conservatory", connected_rooms=["hall", "conservatory"]),
+#             Hallway(id="hallway_8", name="Hallway between Ballroom and Billiards Room", connected_rooms=["ballroom", "billiards_room"]),
+#             Hallway(id="hallway_9", name="Hallway between Hall and Kitchen", connected_rooms=["hall", "kitchen"]),
+#             Hallway(id="hallway_10", name="Hallway between Conservatory and Library", connected_rooms=["conservatory", "library"]),
+#             Hallway(id="hallway_11", name="Hallway between Billiards Room and Kitchen", connected_rooms=["billiards_room", "kitchen"]),
+#             Hallway(id="hallway_12", name="Hallway between Kitchen and Library", connected_rooms=["kitchen", "library"]),
+#         ]
+#
+#     def find_hallway(self, room_id_1: str, room_id_2: str) -> Hallway:
+#         """
+#         Find a hallway connecting two specific rooms, if it exists.
+#         """
+#         for hallway in self.hallways:
+#             if set(hallway.connected_rooms) == {room_id_1, room_id_2}:
+#                 return hallway
+#         return None
+#
+#     def set_hallway_occupied(self, hallway_id: str, status: bool):
+#         """
+#         Set a specific hallway's occupancy status by its ID.
+#         """
+#         hallway = next((h for h in self.hallways if h.id == hallway_id), None)
+#         if hallway:
+#             hallway.set_occupied(status)
 
 @define
 class Location:
@@ -162,49 +162,75 @@ class LocationHandler:
                       [Location(location_id="hallway_8", name="Hallway 8", connected_location=["library", "conservatory"]), Location(location_id="blank_3", name="Blank 3", connected_location=["hallway_6", "hallway_8"]), Location(location_id="hallway_9", name="Hallway 9", connected_location=["billiard_room", "ballroom"]), Location(location_id="blank_4", name="Blank 4", connected_location=["hallway_7", "hallway_12"]), Location(location_id="hallway_10", name="Hallway 10", connected_location=["dining_room", "kitchen"])],
                       [Location(location_id="conservatory", name="Conservatory", connected_location=["hallway_8", "hallway_11"], has_secret_passage=True, secret_passage_to="lounge"), Location(location_id="hallway_11", name="Hallway 11", connected_location=["conservatory", "ballroom"]), Location(location_id="ballroom", name="Ballroom", connected_location=["hallway_9", "hallway_12", "hallway_11"]), Location(location_id="hallway_12", name="Hallway 12", connected_location=["ballroom", "kitchen"]), Location(location_id="kitchen", name="Kitchen", connected_location=["hallway_10", "hallway_12"], has_secret_passage=True, secret_passage_to="study")]]
 
-        self.hallways = self.create_hallways()
-        
-    def lookup_adjacent(self, room_id: str) -> List[str]:
-        """
-        Lookup adjacent rooms for a given room
-        """
-        # Based on adjacency in the self.rooms matrix, return the adjacent rooms
-        for i in range(3):
-            for j in range(3):
-                if self.rooms[i][j].room_id == room_id:
-                    adjacent = []
-                    if i > 0:
-                        adjacent.append(self.rooms[i-1][j].id)
-                    if i < 2:
-                        adjacent.append(self.rooms[i+1][j].id)
-                    if j > 0:
-                        adjacent.append(self.rooms[i][j-1].id)
-                    if j < 2:
-                        adjacent.append(self.rooms[i][j+1].id)
-        
-                    return adjacent
+        #self.hallways = self.create_hallways()
 
-    def create_hallways(self):
-        """
-        Create hallways between adjacent rooms, add them to the self.rooms matrix
-        """
-        hallways = []
-        for i in range(3):
-            for j in range(3):
-                room = self.rooms[i][j]
-                adjacent = self.lookup_adjacent(room.room_id)
-                for adj in adjacent:
-                    hallway = Hallway(id=f"{room.room_id}_{adj}", name=f"Hallway between {room.name} and {adj}", connected_rooms=[room.room_id, adj])
+    # def lookup_adjacent(self, room_id: str) -> List[str]:
+    #     """
+    #     Lookup adjacent rooms for a given room
+    #     """
+    #     # Based on adjacency in the self.rooms matrix, return the adjacent rooms
+    #     for i in range(3):
+    #         for j in range(3):
+    #             if self.rooms[i][j].room_id == room_id:
+    #                 adjacent = []
+    #                 if i > 0:
+    #                     adjacent.append(self.rooms[i-1][j].id)
+    #                 if i < 2:
+    #                     adjacent.append(self.rooms[i+1][j].id)
+    #                 if j > 0:
+    #                     adjacent.append(self.rooms[i][j-1].id)
+    #                 if j < 2:
+    #                     adjacent.append(self.rooms[i][j+1].id)
+    #
+    #                 return adjacent
 
-        return hallways
+    # def create_hallways(self):
+    #     """
+    #     Create hallways between adjacent rooms, add them to the self.rooms matrix
+    #     """
+    #     hallways = []
+    #     for i in range(3):
+    #         for j in range(3):
+    #             room = self.rooms[i][j]
+    #             adjacent = self.lookup_adjacent(room.room_id)
+    #             for adj in adjacent:
+    #                 hallway = Hallway(id=f"{room.room_id}_{adj}", name=f"Hallway between {room.name} and {adj}", connected_rooms=[room.room_id, adj])
+    #
+    #     return hallways
 
-    def set_occupied(self, room_id: str):
+    def set_occupied(self, location_id: str):
         """
-        Set the occupancy status of a room
+        Set the occupancy status of a location
         """
-        for i in range(3):
-            for j in range(3):
-                if self.rooms[i][j].room_id == room_id:
-                    self.rooms[i][j].is_occupied = True
+        for i in range(5):
+            for j in range(5):
+                if self.locations[i][j].location_id == location_id:
+                    self.locations[i][j].is_occupied = True
 
-    
+    def find_connected_locations(self, location_id: str):
+        """
+        Identify what locations are connected to the selected location
+        """
+        # Purpose is to return the list of locations connected to the specified location
+        for i in range(5):
+            for j in range(5):
+                if self.locations[i][j].location_id == location_id:
+                    return self.locations[i][j].connected_location  # Return list of connected location_ids
+
+    def find_available_moves(self, location_id: str):
+        """
+        Identify available moves from the selected location
+        """
+        # Purpose is to identify which of the connected locations can actually be moved to
+        selected_location = location_id
+        possible_moves = self.find_connected_locations(selected_location)  # Generate list of connected location_ids
+
+        # Iterate through list and find locations that are not already occupied (i.e. is_occupied == False)
+
+        for item in possible_moves:
+            for i in range(5):
+                for j in range(5):
+                    if self.locations[i][j].location_id == item:
+                        if self.locations[i][j].is_occupied == False:
+                            return self.locations[i][j].location_id
+
