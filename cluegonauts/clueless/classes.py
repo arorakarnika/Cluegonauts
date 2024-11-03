@@ -207,12 +207,21 @@ class LocationHandler:
 
     def set_occupied(self, location_id: str):
         """
-        Set the occupancy status of a location
+        Set the occupancy status of a location to "occupied"
         """
         for i in range(5):
             for j in range(5):
                 if self.locations[i][j].location_id == location_id:
                     self.locations[i][j].is_occupied = True
+
+    def set_unoccupied(self, location_id: str):
+        """
+        Set the occupancy status of a location to "unoccupied"
+        """
+        for i in range(5):
+            for j in range(5):
+                if self.locations[i][j].location_id == location_id:
+                    self.locations[i][j].is_occupied = False
 
     def find_connected_locations(self, location_id: str):
         """
