@@ -100,3 +100,97 @@ classDiagram
     LocationHandler --> Hallway
 
 ```
+
+## Player Suggestion Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Game as clue_game:ClueGame
+    participant CH as character_handler:CharacterHandler
+    participant View as player_view:View
+    participant GS as game_state:GameState
+    participant OtherView as other_view:View
+    participant NotifiedView as notified_view:View
+    Game ->> CH: get_player_view(player_id)
+    CH -->> Game: player_view
+    Game ->> View: prompt_input()
+    View -->> Game: suggested_player, suggested_weapon
+    Game ->> GS: get_player_location(player_id)
+    GS -->> Game: player_location
+    Game ->> GS: set_player_location(suggested_player, player_location)
+    GS -->> Game: None
+    loop [no card has been shown and not every player has been questioned_player]
+        Game ->> GS: get_player_cards(questioned_player)
+        GS -->> Game: questioned_player_cards
+        opt [questioned_player_cards has a disproving card]
+            Game ->> CH: get_player_view(questioned_player)
+            CH -->> Game: questioned_player_view
+            Game ->> OtherView: prompt_input(disproving_cards)
+            OtherView -->> Game: shown_card
+            Game ->> View: notify(shown_card)
+        end
+        Note right of Game: set next player as questioned_player
+    end
+    Game ->> CH: get_all_views()
+    CH -->> Game: player_view_list
+    loop [notified_player_view in player_view_list]
+        Game ->> NotifiedView: notify(result)
+        NotifiedView -->> Game: 
+    end
+    
+    
+```
+## Player Accusation Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Game as clue_game:ClueGame
+    participant CH as character_handler:CharacterHandler
+    participant View as player_view:View
+    participant GS as game_state:GameState
+    participant OtherView as other_view:View
+    participant NotifiedView as notified_view:View
+    
+    Game ->> CH: get_player_view(player_id)
+    CH -->> Game: player_view
+    Game ->> View: prompt_input()
+    View -->> Game: accused_player, accused_weapon, accused_location
+    Game ->> GS: get_case_file()
+    GS -->> Game: case_file_cards
+    Game ->> CH: get_all_views()
+    CH -->> Game: player_view_list
+    loop [notified_view in player_view_list]
+        Game ->> NotifiedView: notify(accusation_result)
+        NotifiedView -->> Game: 
+    end
+```
+
+## Player Movement Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Game as clue_game:ClueGame
+    participant GS as game_state:GameState
+    participant LH as location_handler:LocationHandler
+    participant CH as character_handler:CharacterHandler
+    participant View as player_view:View
+    participant NotifiedView as notified_view:View
+    
+    Game ->> GS: get_player_location(player_id)
+    GS -->> Game: player_location
+    Game ->> LH: find_available_moves(player_location)
+    LH -->> Game: available_location_list
+    Game ->> CH: get_player_view(player_id)
+    CH -->> Game: player_view
+    Game ->> View: prompt_input(available_location_list)
+    View -->> Game: selected_location
+    Game ->> GS: set_player_location(player_id, selected_location)
+    GS -->> Game: 
+    
+    Game ->> CH: get_all_views()
+    CH -->> Game: player_view_list
+    loop [notified_view in player_view_list]
+        Game ->> NotifiedView: notify(accusation_result)
+        NotifiedView -->> Function: None
+    end
+```
