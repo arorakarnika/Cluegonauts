@@ -1,39 +1,191 @@
-## Sequence Diagram
+## Begin Game Sequence Diagram
 
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Session as Django Session
-    participant CH as CharacterHandler
-    participant RH as RoomHandler
-    participant HH as HallwayHandler
-    participant LH as LocationHandler
+    actor GamePlayer
+    participant WebUI as Web User Interface
+    participant GameController
+    participant GamePlayersConsumer
+    participant CharacterHandler
+    participant DjangoSession
 
-    User ->> Session: Access session data
-    Session ->> CH: Initialize CharacterHandler
-    CH ->> CH: __init__(selected: List[str])
-    User ->> CH: Select character
-    CH ->> CH: set_selected(char_id: str)
-    CH ->> Session: Update session data
+    GamePlayer ->> WebUI: Enters game waiting room
+    WebUI ->> GamePlayer: Displays available characters
+    GamePlayer ->> WebUI: Selects an available character
+    WebUI ->> GameController: Sends selected character
+    GameController -->> GamePlayersConsumer: Set selected character
+    GamePlayersConsumer -->> DjangoSession: Retrieves game session ID
+    GamePlayersConsumer ->> CharacterHandler: select_character(char_id, session_id)
+    CharacterHandler ->> CharacterHandler: Checks if character is available
+    alt Character is available
+        CharacterHandler ->> GamePlayersConsumer: Returns success status
+        GamePlayersConsumer ->> DjangoSession: Updates session with selected character
+        GamePlayersConsumer ->> GameController: Notifies character selection
+        GameController ->> GameController: Validates if enough characters are selected
+        alt Enough characters selected
+            GameController ->> WebUI: Allows game to begin
+        else Not enough characters selected
+            GameController ->> WebUI: Waits for more players
+        end
+    else Character is not available
+        CharacterHandler ->> GamePlayersConsumer: Returns failure status
+        GamePlayersConsumer ->> WebUI: Sends message "selected character has already been assigned, please choose another character"
+        WebUI ->> GamePlayer: Displays error message
+    end
+```
 
-    User ->> RH: Initialize RoomHandler
-    RH ->> RH: __init__()
+## Player Move Sequence Diagram
 
-    User ->> HH: Initialize HallwayHandler
-    HH ->> HH: __init__()
+```mermaid
 
-    User ->> LH: Initialize LocationHandler
-    LH ->> LH: __init__()
-    LH ->> LH: create_hallways()
+sequenceDiagram
+    actor GamePlayer
+    participant WebUI as Web User Interface
+    participant GameController
+    participant LocationHandler
+    participant GamePlayersConsumer
+    participant DjangoSession
 
-    User ->> LH: Lookup adjacent rooms
-    LH ->> LH: lookup_adjacent(room_id: str)
+    GameController ->> WebUI: Prompts Game Player to select a location
+    WebUI ->> GamePlayer: Displays location selection options
+    GamePlayer ->> WebUI: Chooses a location
+    WebUI ->> LocationHandler: Verifies location is valid
+    alt Location is valid
+        LocationHandler ->> GamePlayersConsumer: Updates Game Player location
+        GamePlayersConsumer ->> DjangoSession: Updates session with new location
+        GamePlayersConsumer ->> WebUI: Updates game grid with new location
+        WebUI ->> GamePlayer: Displays updated game grid
+        WebUI ->> GamePlayer: Prompts Game Player with possible actions
+        GamePlayer ->> WebUI: Chooses an action
+        alt Make a suggestion
+            WebUI ->> GameController: Make a suggestion (Use Case #5)
+        else Make an accusation
+            WebUI ->> GameController: Make an accusation (Use Case #4)
+        end
+        loop Until Game Player ends turn
+            WebUI ->> GamePlayer: Prompts Game Player with possible actions
+            GamePlayer ->> WebUI: Chooses an action
+            alt Make a suggestion
+                WebUI ->> GameController: Make a suggestion (Use Case #5)
+            else Make an accusation
+                WebUI ->> GameController: Make an accusation (Use Case #4)
+            end
+        end
+        GameController ->> GameController: Starts next player's turn
+    else Location is not valid
+        LocationHandler ->> WebUI: Notifies Game Player the selected location is not valid
+        WebUI ->> GamePlayer: Displays error message
+        WebUI ->> GamePlayer: Prompts to pick a different location
+        GamePlayer ->> WebUI: Chooses a different location
+        WebUI ->> LocationHandler: Verifies location is valid
+        alt Location is valid
+            LocationHandler ->> GamePlayersConsumer: Updates Game Player location
+            GamePlayersConsumer ->> DjangoSession: Updates session with new location
+            GamePlayersConsumer ->> WebUI: Updates game grid with new location
+            WebUI ->> GamePlayer: Displays updated game grid
+            WebUI ->> GamePlayer: Prompts Game Player with possible actions
+            GamePlayer ->> WebUI: Chooses an action
+            alt Make a suggestion
+                WebUI ->> GameController: Make a suggestion (Use Case #5)
+            else Make an accusation
+                WebUI ->> GameController: Make an accusation (Use Case #4)
+            end
+            loop Until Game Player ends turn
+                WebUI ->> GamePlayer: Prompts Game Player with possible actions
+                GamePlayer ->> WebUI: Chooses an action
+                alt Make a suggestion
+                    WebUI ->> GameController: Make a suggestion (Use Case #5)
+                else Make an accusation
+                    WebUI ->> GameController: Make an accusation (Use Case #4)
+                end
+            end
+            GameController ->> GameController: Starts next player's turn
+        else Location is not valid
+            LocationHandler ->> WebUI: Notifies Game Player the selected location is not valid
+            WebUI ->> GamePlayer: Displays error message
+            WebUI ->> GamePlayer: Prompts to pick a different location
+        end
+    end
 
-    User ->> LH: Set room occupied
-    LH ->> LH: set_occupied(room_id: str)
-    LH ->> RH: Update room status
-    LH ->> HH: Update hallway status
 
+```
+## Player Suggestion Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    actor GamePlayer
+    actor QuestionedPlayer
+    participant WebUI as Web User Interface
+    participant GameController
+    participant LocationHandler
+    participant GamePlayersConsumer
+    participant DjangoSession
+
+    GameController ->> WebUI: Prompts Game Player to select a character and weapon
+    WebUI ->> GamePlayer: Displays character and weapon selection options
+    GamePlayer ->> WebUI: Chooses a character and weapon
+    WebUI ->> GameController: Informs all players of the suggestion
+    GameController ->> LocationHandler: Moves chosen character to suggested room
+    LocationHandler ->> GamePlayersConsumer: Updates Game Player location
+    GamePlayersConsumer ->> DjangoSession: Updates session with new location
+    GamePlayersConsumer ->> WebUI: Updates game grid with new location
+    WebUI ->> GamePlayer: Displays updated game grid
+    WebUI ->> QuestionedPlayer: Prompts to select a card that can disprove the suggestion
+    QuestionedPlayer ->> WebUI: Chooses a disproving card
+    WebUI ->> GamePlayer: Notifies which card was used to disprove the suggestion
+    WebUI ->> AllPlayers: Notifies that the suggestion was disproved
+    GameController ->> GameController: Branches to Player Turn (Use Case 3)
+
+    alt Questioned Player cannot disprove suggestion
+        WebUI ->> AllPlayers: Notifies that the suggestion cannot be disproved
+        GameController ->> GameController: Designates next player as new Questioned Player
+        GameController ->> WebUI: Prompts new Questioned Player to select a card
+        QuestionedPlayer ->> WebUI: Chooses a disproving card
+        WebUI ->> GamePlayer: Notifies which card was used to disprove the suggestion
+        WebUI ->> AllPlayers: Notifies that the suggestion was disproved
+        GameController ->> GameController: Branches to Player Turn (Use Case 3)
+    else All players unable to disprove suggestion
+        WebUI ->> AllPlayers: Informs that the suggestion could not be disproved
+        GameController ->> GameController: Branches to Player Turn (Use Case 3)
+    end
+
+```
+
+
+## Player Accusation Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    actor GamePlayer
+    participant WebUI as Web User Interface
+    participant GameController
+    participant LocationHandler
+    participant GamePlayersConsumer
+    participant DjangoSession
+    participant CardHandler
+    GameController ->> WebUI: Prompts Game Player to select a character and weapon for the Accusation
+    WebUI ->> GamePlayer: Displays character and weapon selection options
+    GamePlayer ->> WebUI: Chooses a character and weapon
+    WebUI ->> GameController: Informs Game Subsystem of the Accusation
+    GameController ->> GameController: Determines the room for the Accusation based on the current room of the Game Player
+    GameController ->> WebUI: Displays the Accusation to all Game Players
+    GameController ->> LocationHandler: Moves accused character to the accused room
+    LocationHandler ->> GamePlayersConsumer: Updates Game Player location
+    GamePlayersConsumer ->> DjangoSession: Updates session with new location
+    GamePlayersConsumer ->> WebUI: Updates game grid with new location
+    WebUI ->> GamePlayer: Displays updated game grid
+    GameController ->> CardHandler: Checks selected character, room, and weapon against the Case File
+    alt Accusation is correct
+        CardHandler ->> GameController: Returns match
+        GameController ->> WebUI: Displays message that the Accusation was correct
+        WebUI ->> AllPlayers: Notifies that the Game Player who made the Accusation is the winner
+        GameController ->> GameController: Ends the game
+    else Accusation is incorrect
+        CardHandler ->> GameController: Returns no match
+        GameController ->> WebUI: Displays message that the Accusation was not correct
+        WebUI ->> GamePlayer: Notifies that they cannot make another Accusation and cannot win the game
+        GameController ->> GameController: Branches to Player Turn (Use Case 3)
+    end
 ```
 
 ## Class Diagram
@@ -42,7 +194,7 @@ sequenceDiagram
 classDiagram
     class Character {
         +name: str
-        +id: str
+        +character_id: str
         +image: Optional[str]
         +selected: bool = False
     }
@@ -56,141 +208,80 @@ classDiagram
         +serialize_selected(): List~str~
     }
 
-    class Room {
+    class Location {
         +name: str
-        +id: str
+        +location_id: str
         +has_secret_passage: bool = False
-        +secret_passage_to: Optional[str]
+        +secret_passage_to: Optional~Location.location_id~
         +is_occupied: bool = False
-    }
-
-    class RoomHandler {
-        +rooms: List~Room~
-        +__init__()
-    }
-
-    class Hallway {
-        +id: str
-        +name: str
-        +connected_rooms: List~str~
-        +is_occupied: bool = False
-        +set_occupied(status: bool)
-    }
-
-    class HallwayHandler {
-        +hallways: List~Hallway~
-        +__init__()
-        +find_hallway(room_id_1: str, room_id_2: str): Hallway
-        +set_hallway_occupied(hallway_id: str, status: bool)
+        +type: enum = Room | Hallway
     }
 
     class LocationHandler {
-        +rooms: List~List~Room~~
-        +hallways: List~Hallway~
+        +locations: List~Location~
         +__init__()
-        +lookup_adjacent(room_id: str): List~str~
-        +create_hallways()
-        +set_occupied(room_id: str)
+        +find_connected_locations(location_id: str) List~str~
+        +set_occupied(location_id: str)
+        +set_unoccupied(location_id: str)
+        +find_available_moves(location_id: str) Location.location_id~str~
     }
 
-    CharacterHandler --> Character
-    RoomHandler --> Room
-    HallwayHandler --> Hallway
-    LocationHandler --> Room
-    LocationHandler --> Hallway
+    class Card {
+        +name: str
+        +type: str
+        +image: Optional[str]
+    }
 
-```
+    class CardHandler {
+        +character_cards: List~Card~
+        +location_cards: List~Card~
+        +weapon_cards: List~Card~
+        +create_case_file()
+        +deal_cards()
+    }
 
-## Player Suggestion Sequence Diagram
+    class GameSession {
+        +session_id: UUID
+        +selected_players: List~Character~
+        +created_at: DateTime
+        +case_file_cards: List~Card~
+        +player_cards: JSON
+        +current_turn: JSON
+        +get_selected_players(session_id) JSON
+        +update_selected_players(selected_players, session_id) UUID
+        +set_case_file_cards(case_file_cards, session_id)
+        +get_case_file_cards(session_id) JSON
+        +set_player_cards(player_cards, session_id)
+        +get_player_cards(session_id) JSON
+        +set_current_turn(current_turn, session_id)
+        +get_current_turn(session_id) JSON
+    }
 
-```mermaid
-sequenceDiagram
-    participant Game as clue_game:ClueGame
-    participant CH as character_handler:CharacterHandler
-    participant View as player_view:View
-    participant GS as game_state:GameState
-    participant OtherView as other_view:View
-    participant NotifiedView as notified_view:View
-    Game ->> CH: get_player_view(player_id)
-    CH -->> Game: player_view
-    Game ->> View: prompt_input()
-    View -->> Game: suggested_player, suggested_weapon
-    Game ->> GS: get_player_location(player_id)
-    GS -->> Game: player_location
-    Game ->> GS: set_player_location(suggested_player, player_location)
-    GS -->> Game: None
-    loop [no card has been shown and not every player has been questioned_player]
-        Game ->> GS: get_player_cards(questioned_player)
-        GS -->> Game: questioned_player_cards
-        opt [questioned_player_cards has a disproving card]
-            Game ->> CH: get_player_view(questioned_player)
-            CH -->> Game: questioned_player_view
-            Game ->> OtherView: prompt_input(disproving_cards)
-            OtherView -->> Game: shown_card
-            Game ->> View: notify(shown_card)
-        end
-        Note right of Game: set next player as questioned_player
-    end
-    Game ->> CH: get_all_views()
-    CH -->> Game: player_view_list
-    loop [notified_player_view in player_view_list]
-        Game ->> NotifiedView: notify(result)
-        NotifiedView -->> Game: 
-    end
-    
-    
-```
-## Player Accusation Sequence Diagram
+    class DjangoSession {
+        +game_session_id: UUID
+        +user_id: UUID
+    }
 
-```mermaid
-sequenceDiagram
-    participant Game as clue_game:ClueGame
-    participant CH as character_handler:CharacterHandler
-    participant View as player_view:View
-    participant GS as game_state:GameState
-    participant OtherView as other_view:View
-    participant NotifiedView as notified_view:View
-    
-    Game ->> CH: get_player_view(player_id)
-    CH -->> Game: player_view
-    Game ->> View: prompt_input()
-    View -->> Game: accused_player, accused_weapon, accused_location
-    Game ->> GS: get_case_file()
-    GS -->> Game: case_file_cards
-    Game ->> CH: get_all_views()
-    CH -->> Game: player_view_list
-    loop [notified_view in player_view_list]
-        Game ->> NotifiedView: notify(accusation_result)
-        NotifiedView -->> Game: 
-    end
-```
+    class GameController {
+        +chat_room_name: str
+        +chat_group_name: str
+        +send_message_to_ui(message: str)
+        +receive_message(message: str)
+        -select_player()
+        -unlock_game_start()
+        -setup_game()
+        -player_move()
+        -player_suggestion()
+        -player_accusation()
+    }
 
-## Player Movement Sequence Diagram
+    %%note for WebSocket "Django Channels Websocket object, keeps connection alive with web interface"
 
-```mermaid
-sequenceDiagram
-    participant Game as clue_game:ClueGame
-    participant GS as game_state:GameState
-    participant LH as location_handler:LocationHandler
-    participant CH as character_handler:CharacterHandler
-    participant View as player_view:View
-    participant NotifiedView as notified_view:View
-    
-    Game ->> GS: get_player_location(player_id)
-    GS -->> Game: player_location
-    Game ->> LH: find_available_moves(player_location)
-    LH -->> Game: available_location_list
-    Game ->> CH: get_player_view(player_id)
-    CH -->> Game: player_view
-    Game ->> View: prompt_input(available_location_list)
-    View -->> Game: selected_location
-    Game ->> GS: set_player_location(player_id, selected_location)
-    GS -->> Game: 
-    
-    Game ->> CH: get_all_views()
-    CH -->> Game: player_view_list
-    loop [notified_view in player_view_list]
-        Game ->> NotifiedView: notify(accusation_result)
-        NotifiedView -->> Function: None
-    end
+
+    CharacterHandler "1" o-- "many" Character : aggregates
+    LocationHandler "1" o-- "many" Location : aggregates
+    CardHandler "1" o-- "many" Card : aggregates
+    Location "1" --> "1" Location : secret_passage_to
+    DjangoSession "1" ..|> "1" GameSession : stores
+    %% GameController <|-- WebSocket: inherits
 ```
