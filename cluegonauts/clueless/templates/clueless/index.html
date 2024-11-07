@@ -49,6 +49,7 @@
     document.querySelector('#player-select').focus();
     document.querySelector('#player-select').onkeyup = function (e) {
         if (e.key === 'Enter') {  // enter, return
+            console.log("inside player submit");
             document.querySelector('#player-submit').click();
         }
     };
@@ -61,6 +62,7 @@
 
     activitySocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
+        console.log(data);
         const playerLog = document.querySelector('#player-log');
         if (data.message == "unlock_start") {
             // Enable the "Start Game" button

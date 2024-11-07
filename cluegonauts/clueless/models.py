@@ -63,12 +63,22 @@ class GameSession(models.Model):
         """
         return json.loads(GameSession.objects.get(session_id=session_id).player_cards)
 
+    def set_next_turn(self, current_turn, session_id):
+        """
+        Set the next turn for a game session
+        """
+        index = GameSession.objects.get(session_id=session_id).selected_players.index(current_turn) + 1
+        if index >= len(GameSession.objects.get(session_id=session_id).selected_players):
+            index = 0
+        next_turn = GameSession.objects.get(session_id=session_id).selected_players[index]
+        return GameSession.objects.filter(session_id=session_id).update(current_turn=next_turn)
+    
     def set_current_turn(self, current_turn, session_id):
         """
         Set the current turn for a game session
         """
-        GameSession.objects.filter(session_id=session_id).update(current_turn=current_turn)
-
+        return GameSession.objects.filter(session_id=session_id).update(current_turn=current_turn)
+  
     def get_current_turn(self, session_id):
         """
         Get the current turn for a game session

@@ -19,4 +19,5 @@ def index(request):
         )
 
 def gameb(request):
+    session_id = request.session.get("game_session", None)
     return render(request, "clueless/gameb.html")

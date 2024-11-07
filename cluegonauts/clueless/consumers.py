@@ -166,4 +166,4 @@ class GameStateConsumer(WebsocketConsumer):
             self.room_group_name, {"type": "status.update", "subtype": "redirect_game"}
         )
 
-        game_session.set_current_turn("ms_scarlet", session_id)
+        game_session.set_current_turn(game_session.get_selected_players(session_id)[0], session_id)
