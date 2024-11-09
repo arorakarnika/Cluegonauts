@@ -13,8 +13,8 @@ sequenceDiagram
     WebUI ->> GamePlayer: Displays available characters
     GamePlayer ->> WebUI: Selects an available character
     WebUI ->> GameController: Sends selected character
-    GameController -->> GamePlayersConsumer: Set selected character
-    GamePlayersConsumer -->> DjangoSession: Retrieves game session ID
+    GameController ->> GamePlayersConsumer: Set selected character
+    GamePlayersConsumer ->> DjangoSession: Retrieves game session ID
     GamePlayersConsumer ->> CharacterHandler: select_character(char_id, session_id)
     CharacterHandler ->> CharacterHandler: Checks if character is available
     alt Character is available
