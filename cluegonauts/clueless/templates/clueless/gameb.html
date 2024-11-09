@@ -27,7 +27,7 @@
                   <option value="action item">Make an Accusation</div>
               </select>
               <div class="label">
-                  <button id="player-submit" class="btn btn-neutral"> Select Action </button>
+                  <button id="player-turn" class="btn btn-neutral"> Select Action </button>
               </div>
               <div id="game board" class="grid grid-rows-3 grid-flow-col gap-5 font-mono text-white text-sm text-center font-bold leading-6 rounded-lg">
                 <div class="p-20 rounded-lg shadow-lg bg-blue-500">Study</div>
@@ -59,6 +59,31 @@
   {% block script %}
 
 <script>
+    
+    console.log("in gameb");
+    const activitySocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/clueless/gamestate/'
+    );
+
+    activitySocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        console.log(data);
+        const playerLog = document.querySelector('#player-log');
+        if (data.message == "player_turn") {
+            // Enable the "Player Turn" button
+            const startGameButton = document.querySelector('#player-turn');
+            startTurnButton.disabled = false;
+            startTurnButton.classList.remove('btn-disabled');
+            startTurnButton.classList.add('btn');
+        }
+    };
+
+    activitySocket.onclose = function (e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
 </script>
 
 {% endblock %}

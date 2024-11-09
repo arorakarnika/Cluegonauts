@@ -167,3 +167,7 @@ class GameStateConsumer(WebsocketConsumer):
         )
 
         game_session.set_current_turn(game_session.get_selected_players(session_id)[0], session_id)
+        
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name, {"type": "status.update", "subtype": "next.player","player":game_session.get_selected_players(session_id)[0] }
+        )
