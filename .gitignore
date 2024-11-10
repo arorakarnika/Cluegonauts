@@ -2,5 +2,6 @@
 */__pycache__/*
 cluegonauts/app/__pycache__/*
 cluegonauts/clueless/__pycache__/*
+cluegonauts/clueless/migrations/__pycache__/*
 
 cluegonauts/db.sqlite3
