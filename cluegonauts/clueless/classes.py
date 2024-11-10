@@ -66,6 +66,76 @@ class CharacterHandler:
         Serialize the selected characters
         """
         return [char.id for char in self.characters if char.selected]
+    
+
+@define
+class Location:
+    location_id: str
+    name: str
+    connected_location: List[str] #Stores location_id of the locations connected to this location
+    is_occupied: bool = False # Default to unoccupied
+    has_secret_passage: bool = False # Default to no secret passage
+    secret_passage_to: Optional[str] = None # Default to no secret passage locations
+
+class LocationHandler:
+    def __init__(self):
+        """
+        Initialize the location handler with a matrix of the locations (rooms and hallways)
+        """
+        # Matrix with locations
+        # Rows 1 and 3 have only 3 hallways each; created Location objects "Blank_X" as placeholders for columns 1 and 3 in these rows
+        # Connected locations are read clockwise beginning at the 12 o'clock location
+        self.locations = [[Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen"), Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"]), Location(location_id="hall", name="Hall", connected_location=["hallway_2", "hallway_4", "hallway_1"]), Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), Location(location_id="lounge", name="Lounge", connected_location=["hallway_5", "hallway_2"], has_secret_passage=True, secret_passage_to="conservatory")],
+                      [Location(location_id="hallway_3", name="Hallway 3", connected_location=["study", "library"]), Location(location_id="blank_1", name="Blank 1", connected_location=["hallway_1", "hallway_6"]), Location(location_id="hallway_4", name="Hallway 4", connected_location=["hall", "billiard room"]), Location(location_id="blank_2", name="Blank 2", connected_location=["hallway_2", "hallway_7"]), Location(location_id="hallway_5", name="Hallway 5", connected_location=["lounge", "dining_room"])],
+                      [Location(location_id="library", name="Library", connected_location=["hallway_3", "hallway_6", "hallway_8"]), Location(location_id="hallway_6", name="Hallway 6", connected_location=["library", "billiard_room"]), Location(location_id="billiard_room", name="Billiard Room", connected_location=["hallway_4", "hallway_7", "hallway_9", "hallway_6"]), Location(location_id="hallway_7", name="Hallway 7", connected_location=["billiard_room", "dining_room"]), Location(location_id="dining_room", name="Dining Room", connected_location=["hallway_5", "hallway_10", "hallway_7"])],
+                      [Location(location_id="hallway_8", name="Hallway 8", connected_location=["library", "conservatory"]), Location(location_id="blank_3", name="Blank 3", connected_location=["hallway_6", "hallway_8"]), Location(location_id="hallway_9", name="Hallway 9", connected_location=["billiard_room", "ballroom"]), Location(location_id="blank_4", name="Blank 4", connected_location=["hallway_7", "hallway_12"]), Location(location_id="hallway_10", name="Hallway 10", connected_location=["dining_room", "kitchen"])],
+                      [Location(location_id="conservatory", name="Conservatory", connected_location=["hallway_8", "hallway_11"], has_secret_passage=True, secret_passage_to="lounge"), Location(location_id="hallway_11", name="Hallway 11", connected_location=["conservatory", "ballroom"]), Location(location_id="ballroom", name="Ballroom", connected_location=["hallway_9", "hallway_12", "hallway_11"]), Location(location_id="hallway_12", name="Hallway 12", connected_location=["ballroom", "kitchen"]), Location(location_id="kitchen", name="Kitchen", connected_location=["hallway_10", "hallway_12"], has_secret_passage=True, secret_passage_to="study")]]
+
+    def set_occupied(self, location_id: str):
+        """
+        Set the occupancy status of a location to "occupied"
+        """
+        for i in range(5):
+            for j in range(5):
+                if self.locations[i][j].location_id == location_id:
+                    self.locations[i][j].is_occupied = True
+
+    def set_unoccupied(self, location_id: str):
+        """
+        Set the occupancy status of a location to "unoccupied"
+        """
+        for i in range(5):
+            for j in range(5):
+                if self.locations[i][j].location_id == location_id:
+                    self.locations[i][j].is_occupied = False
+
+    def find_connected_locations(self, location_id: str):
+        """
+        Identify what locations are connected to the selected location
+        """
+        # Purpose is to return the list of locations connected to the specified location
+        for i in range(5):
+            for j in range(5):
+                if self.locations[i][j].location_id == location_id:
+                    return self.locations[i][j].connected_location  # Return list of connected location_ids
+
+    def find_available_moves(self, location_id: str):
+        """
+        Identify available moves from the selected location
+        """
+        # Purpose is to identify which of the connected locations can actually be moved to
+        selected_location = location_id
+        possible_moves = self.find_connected_locations(selected_location)  # Generate list of connected location_ids
+
+        # Iterate through list and find locations that are not already occupied (i.e. is_occupied == False)
+
+        for item in possible_moves:
+            for i in range(5):
+                for j in range(5):
+                    if self.locations[i][j].location_id == item:
+                        if self.locations[i][j].is_occupied is False:
+                            return self.locations[i][j].location_id
+
 
 class CardHandler:
     def __init__(self):

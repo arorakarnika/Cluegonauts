@@ -5,6 +5,7 @@ from channels.testing import ChannelsLiveServerTestCase
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.webdriver import WebDriver
 from clueless.consumers import GamePlayersConsumer
+from clueless.classes import RoomHandler, HallwayHandler
 
 
 class ConsumerTests(TestCase):
@@ -71,3 +72,32 @@ class SeleniumTests(ChannelsLiveServerTestCase):
         player_log_height = self.selenium.find_element(By.ID, "player-log").size['height']
 
         self.assertLessEqual(player_log_height, screen_height)
+
+
+
+class RoomAndHallwayTests(TestCase):
+    def test_room_secret_passage(self):
+        room_handler = RoomHandler()
+        study = next(room for room in room_handler.rooms if room.id == "study")
+        self.assertEqual(study.secret_passage_to, "library")
+        study.is_occupied = True
+        self.assertTrue(study.is_occupied)
+
+    def test_room_occupancy(self):
+        room_handler = RoomHandler()
+        dining_room = next(room for room in room_handler.rooms if room.id == "dining_room")
+        dining_room.is_occupied = True
+        self.assertTrue(dining_room.is_occupied)
+
+    def test_hallway_connections(self):
+        hallway_handler = HallwayHandler()
+        hallway = hallway_handler.find_hallway("study", "dining_room")
+        self.assertIsNotNone(hallway)
+        self.assertEqual(set(hallway.connected_rooms), {"study", "dining_room"})
+
+    def test_hallway_occupancy(self):
+        hallway_handler = HallwayHandler()
+        hallway_handler.set_hallway_occupied("hallway_1", True)
+        hallway = next(h for h in hallway_handler.hallways if h.id == "hallway_1")
+        self.assertTrue(hallway.is_occupied)
+        
