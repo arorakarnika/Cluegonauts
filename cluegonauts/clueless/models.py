@@ -16,6 +16,7 @@ class GameSession(models.Model):
     case_file_cards = models.JSONField(default=None, null=True)
     player_cards = models.JSONField(default=None, null=True)
     current_turn = models.JSONField(default=None, null=True)
+    location_state = models.JSONField(default=None, null=True)
 
     def __str__(self):
         return self.session_id
@@ -84,3 +85,15 @@ class GameSession(models.Model):
         Get the current turn for a game session
         """
         return GameSession.objects.get(session_id=session_id).current_turn
+    
+    def get_location_state(self, session_id):
+        """
+        Get the location state for a game session
+        """
+        return GameSession.objects.get(session_id=session_id).location_state
+    
+    def set_location_state(self, location_state, session_id):
+        """
+        Set the location state for a game session
+        """
+        return GameSession.objects.filter(session_id=session_id).update(location_state=location_state)

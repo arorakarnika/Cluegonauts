@@ -1,74 +1,13 @@
 import random
 from collections import defaultdict
 from attrs import define
-from typing import List, Optional
-
-
-@define
-class Character:
-    name: str
-    id: str
-    image: Optional[str]
-    selected: bool = False
-    user_id: Optional[str] = None
+from typing import List, Optional, Dict
 
 @define
 class Card:
     name: str
     id: str
     image: Optional[str]
-
-class CharacterHandler:
-    def __init__(self, selected: List[str] = []):
-        """
-        Initialize the character handler with the list of characters
-        The selected property is set to False for all characters on initialization, but will used to track 
-        which characters are available for selection
-        The image property is optional and can be used to display the character image in the UI
-        It should correspond to the filename of the image in the cluegonauts/static/clueless/images/ directory
-        """
-        self.characters: List[Character] = [Character(name="Miss Scarlet", image="scarlet.png", id="ms_scarlet"),
-                                            Character(name="Colonel Mustard", image="mustard.png", id="col_mustard"),
-                                            Character(name="Mrs. White", image="white.png", id="mrs_white"),
-                                            Character(name="Mr. Green", image="green.png", id="mr_green"),
-                                            Character(name="Mrs. Peacock", image="peacock.png", id="mrs_peacock"),
-                                            Character(name="Professor Plum", image="plum.png", id="prof_plum")]
-        # Set selected property to True for characters that are already selected
-        for char_id in selected:
-            self.set_selected(char_id)
-
-    def is_available(self, char_id: str) -> bool:
-        """
-        Check if a character is available for selection
-        """
-        # Find character with id
-        character = list(filter(lambda x: x.id == char_id, self.characters))[0]
-
-        return not character.selected # Negate the selected property to check if the character is available
-
-
-    def set_selected(self, char_id: str, user_id: Optional[str] = None):
-        """
-        Set a character as selected
-        """
-        # Find character with id and set selected to True
-        for character in self.characters:
-            if character.id == char_id:
-                character.selected = True
-                character.user_id = user_id
-
-    def get_all_characters(self) -> List[Character]:
-        """
-        Get a list of available characters
-        """
-        return self.characters
-
-    def serialize_selected(self) -> List[str]:
-        """
-        Serialize the selected characters
-        """
-        return [char.id for char in self.characters if char.selected]
-    
 
 @define
 class Location:
@@ -79,21 +18,140 @@ class Location:
     has_secret_passage: bool = False # Default to no secret passage
     secret_passage_to: Optional[str] = None # Default to no secret passage locations
 
+@define
+class Character:
+    name: str
+    char_id: str
+    image: Optional[str]
+    selected: bool = False
+    user_id: Optional[str] = None
+    cards: List[Card] = []
+    location: Location = None
+
+class CharacterHandler:
+    def __init__(self, selected: List[str] = []):
+        """
+        Initialize the character handler with the list of characters
+        The selected property is set to False for all characters on initialization, but will used to track 
+        which characters are available for selection
+        The image property is optional and can be used to display the character image in the UI
+        It should correspond to the filename of the image in the cluegonauts/static/clueless/images/ directory
+        """
+        self.characters: List[Character] = [Character(name="Miss Scarlet", image="scarlet.png", char_id="ms_scarlet"),
+                                            Character(name="Colonel Mustard", image="mustard.png", char_id="col_mustard"),
+                                            Character(name="Mrs. White", image="white.png", char_id="mrs_white"),
+                                            Character(name="Mr. Green", image="green.png", char_id="mr_green"),
+                                            Character(name="Mrs. Peacock", image="peacock.png", char_id="mrs_peacock"),
+                                            Character(name="Professor Plum", image="plum.png", char_id="prof_plum")]
+        # Set selected property to True for characters that are already selected
+        for char_id in selected:
+            self.set_selected(char_id)
+
+    def is_available(self, char_id: str) -> bool:
+        """
+        Check if a character is available for selection
+        """
+        # Find character with id
+        character = list(filter(lambda x: x.char_id == char_id, self.characters))[0]
+
+        return not character.selected # Negate the selected property to check if the character is available
+
+
+    def set_selected(self, char_id: str, user_id: Optional[str] = None):
+        """
+        Set a character as selected
+        """
+        # Find character with id and set selected to True
+        for character in self.characters:
+            if character.char_id == char_id:
+                character.selected = True
+                character.user_id = user_id
+
+    def get_all_characters(self) -> List[Character]:
+        """
+        Get a list of available characters
+        """
+        return self.characters
+    
+    def get_selected_characters(self) -> List[Character]:
+        """
+        Get a list of selected characters
+        """
+        return [char for char in self.characters if char.selected is True]
+    
+    def get_character_by_id(self, char_id: str) -> Optional[Character]:
+        """
+        Get a character by ID
+        """
+        # Find character with id
+        return next((char for char in self.characters if char.char_id == char_id), None)
+
+    def serialize_selected(self) -> List[str]:
+        """
+        Serialize the selected characters
+        """
+        return [char.char_id for char in self.characters if char.selected]
+
+    def update_character_cards(self, card_selection: Dict[str, List[Card]]):
+        """
+        Update the cards of a character
+        """
+        # Find character with id and append card to cards list
+        for char_id, cards in card_selection.items():
+            for character in self.characters:
+                if character.char_id == char_id:
+                    character.cards.extend(cards)
+    
+
+
 class LocationHandler:
-    def __init__(self):
+    def __init__(self, locations: List[Dict] = []):
         """
         Initialize the location handler with a matrix of the locations (rooms and hallways)
         """
         # Matrix with locations
         # Rows 1 and 3 have only 3 hallways each; created Location objects "Blank_X" as placeholders for columns 1 and 3 in these rows
         # Connected locations are read clockwise beginning at the 12 o'clock location
-        self.locations = [[Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen"), Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"]), Location(location_id="hall", name="Hall", connected_location=["hallway_2", "hallway_4", "hallway_1"]), Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), Location(location_id="lounge", name="Lounge", connected_location=["hallway_5", "hallway_2"], has_secret_passage=True, secret_passage_to="conservatory")],
-                      [Location(location_id="hallway_3", name="Hallway 3", connected_location=["study", "library"]), Location(location_id="blank_1", name="Blank 1", connected_location=["hallway_1", "hallway_6"]), Location(location_id="hallway_4", name="Hallway 4", connected_location=["hall", "billiard room"]), Location(location_id="blank_2", name="Blank 2", connected_location=["hallway_2", "hallway_7"]), Location(location_id="hallway_5", name="Hallway 5", connected_location=["lounge", "dining_room"])],
-                      [Location(location_id="library", name="Library", connected_location=["hallway_3", "hallway_6", "hallway_8"]), Location(location_id="hallway_6", name="Hallway 6", connected_location=["library", "billiard_room"]), Location(location_id="billiard_room", name="Billiard Room", connected_location=["hallway_4", "hallway_7", "hallway_9", "hallway_6"]), Location(location_id="hallway_7", name="Hallway 7", connected_location=["billiard_room", "dining_room"]), Location(location_id="dining_room", name="Dining Room", connected_location=["hallway_5", "hallway_10", "hallway_7"])],
-                      [Location(location_id="hallway_8", name="Hallway 8", connected_location=["library", "conservatory"]), Location(location_id="blank_3", name="Blank 3", connected_location=["hallway_6", "hallway_8"]), Location(location_id="hallway_9", name="Hallway 9", connected_location=["billiard_room", "ballroom"]), Location(location_id="blank_4", name="Blank 4", connected_location=["hallway_7", "hallway_12"]), Location(location_id="hallway_10", name="Hallway 10", connected_location=["dining_room", "kitchen"])],
-                      [Location(location_id="conservatory", name="Conservatory", connected_location=["hallway_8", "hallway_11"], has_secret_passage=True, secret_passage_to="lounge"), Location(location_id="hallway_11", name="Hallway 11", connected_location=["conservatory", "ballroom"]), Location(location_id="ballroom", name="Ballroom", connected_location=["hallway_9", "hallway_12", "hallway_11"]), Location(location_id="hallway_12", name="Hallway 12", connected_location=["ballroom", "kitchen"]), Location(location_id="kitchen", name="Kitchen", connected_location=["hallway_10", "hallway_12"], has_secret_passage=True, secret_passage_to="study")]]
+        if locations:
+            self.locations = [locations]
+        self.locations = [
+            [
+                Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen"), 
+                Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"]), 
+                Location(location_id="hall", name="Hall", connected_location=["hallway_2", "hallway_4", "hallway_1"]), 
+                Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), Location(location_id="lounge", name="Lounge", connected_location=["hallway_5", "hallway_2"], has_secret_passage=True, secret_passage_to="conservatory")
+            ],
+            [
+                Location(location_id="hallway_3", name="Hallway 3", connected_location=["study", "library"]),
+                Location(location_id="blank_1", name="Blank 1", connected_location=["hallway_1", "hallway_6"]), 
+                Location(location_id="hallway_4", name="Hallway 4", connected_location=["hall", "billiard room"]), 
+                Location(location_id="blank_2", name="Blank 2", connected_location=["hallway_2", "hallway_7"]), 
+                Location(location_id="hallway_5", name="Hallway 5", connected_location=["lounge", "dining_room"])
+            ],
+            [
+                Location(location_id="library", name="Library", connected_location=["hallway_3", "hallway_6", "hallway_8"]), 
+                Location(location_id="hallway_6", name="Hallway 6", connected_location=["library", "billiard_room"]), 
+                Location(location_id="billiard_room", name="Billiard Room", connected_location=["hallway_4", "hallway_7", "hallway_9", "hallway_6"]), 
+                Location(location_id="hallway_7", name="Hallway 7", connected_location=["billiard_room", "dining_room"]), 
+                Location(location_id="dining_room", name="Dining Room", connected_location=["hallway_5", "hallway_10", "hallway_7"])
+            ],
+            [
+                Location(location_id="hallway_8", name="Hallway 8", connected_location=["library", "conservatory"]), 
+                Location(location_id="blank_3", name="Blank 3", connected_location=["hallway_6", "hallway_8"]), 
+                Location(location_id="hallway_9", name="Hallway 9", connected_location=["billiard_room", "ballroom"]), 
+                Location(location_id="blank_4", name="Blank 4", connected_location=["hallway_7", "hallway_12"]), 
+                Location(location_id="hallway_10", name="Hallway 10", connected_location=["dining_room", "kitchen"])
+            ],
+            [
+                Location(location_id="conservatory", name="Conservatory", connected_location=["hallway_8", "hallway_11"], has_secret_passage=True, secret_passage_to="lounge"), 
+                Location(location_id="hallway_11", name="Hallway 11", connected_location=["conservatory", "ballroom"]), 
+                Location(location_id="ballroom", name="Ballroom", connected_location=["hallway_9", "hallway_12", "hallway_11"]), 
+                Location(location_id="hallway_12", name="Hallway 12", connected_location=["ballroom", "kitchen"]), 
+                Location(location_id="kitchen", name="Kitchen", connected_location=["hallway_10", "hallway_12"], has_secret_passage=True, secret_passage_to="study")
+            ]
+        ]
 
-    def set_occupied(self, location_id: str):
+    def set_occupied(self, location_id: str, char: Character):
         """
         Set the occupancy status of a location to "occupied"
         """
@@ -101,6 +159,7 @@ class LocationHandler:
             for j in range(5):
                 if self.locations[i][j].location_id == location_id:
                     self.locations[i][j].is_occupied = True
+                    self.locations[i][j].chars.append(char)
 
     def set_unoccupied(self, location_id: str):
         """
@@ -137,6 +196,24 @@ class LocationHandler:
                     if self.locations[i][j].location_id == item:
                         if self.locations[i][j].is_occupied is False:
                             return self.locations[i][j].location_id
+                        
+    def get_all_locations(self) -> List[Location]:
+        """
+        Get a list of all locations, without the matrix structure
+        """
+        # Unpack the matrix structure into a single list and serialize the locations into dictionaries
+        return [location for row in self.locations for location in row]
+    
+    def get_location_by_id(self, location_id: str) -> Optional[Location]:
+        """
+        Get a location by ID
+        """
+        # Find location with id
+        for row in self.locations:
+            for location in row:
+                if location.location_id == location_id:
+                    return location
+        return None
 
 
 class CardHandler:
@@ -168,6 +245,8 @@ class CardHandler:
                                         Card(name="Lounge", image="lounge.png", id="lounge"),
                                         Card(name="Dining Room", image="dining_room.png", id="dining_room"),
                                         Card(name="Kitchen", image="kitchen.png", id="kitchen")]
+        
+        self.case_file = self.select_case_file()
 
 
     def select_case_file(self):

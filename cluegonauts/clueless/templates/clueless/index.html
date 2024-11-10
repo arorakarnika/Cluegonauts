@@ -16,7 +16,7 @@
             </div>
             <select id="player-select" class="select select-primary w-full max-w-xs" control-id="ControlID-1">
                 {% for player in char_choices %}
-                <option value="{{ player.id }}" {% if player.selected %} disabled {% endif %} >{{ player.name }}</option>
+                <option value="{{ player.char_id }}" {% if player.selected %} disabled {% endif %} >{{ player.name }}</option>
                 {% endfor %}
                 
             </select>
@@ -29,6 +29,10 @@
             </div>
         </div>
         <div class="col-span-2">
+            <div id="selected-character" class="label">
+                <span class="text"> Selected Character: </span>
+                <span id="selected-character-name" class="text"> </span>
+                <span id="selected-character-id" class="text" hidden> </span>
 
             <div id="player-log" class="container mx-auto overflow-auto max-h-dvh">
                 <div class="label">
@@ -49,7 +53,6 @@
     document.querySelector('#player-select').focus();
     document.querySelector('#player-select').onkeyup = function (e) {
         if (e.key === 'Enter') {  // enter, return
-            console.log("inside player submit");
             document.querySelector('#player-submit').click();
         }
     };
@@ -62,7 +65,6 @@
 
     activitySocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
-        console.log(data);
         const playerLog = document.querySelector('#player-log');
         if (data.message == "unlock_start") {
             // Enable the "Start Game" button
@@ -73,7 +75,7 @@
         } else if (data.message === "redirect_game") {
             playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">Redirecting</div></div>';
             playerLog.scrollTop = playerLog.scrollHeight;
-            window.location.href = '/clueless/game';
+            window.location.href = '/clueless/game/' + document.querySelector('#selected-character-id').innerText;
         } else {
             playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
             playerLog.scrollTop = playerLog.scrollHeight;
@@ -81,6 +83,8 @@
             // Set selected player to hidden in dropdown
             const selectedPlayer = document.querySelector('#player-select option[value="' + data.char_selected + '"]');
             selectedPlayer.disabled = true;
+            document.querySelector('#selected-character-name').innerText = selectedPlayer.text;
+            document.querySelector('#selected-character-id').innerText = data.char_selected;
             // Unselect the selected player
         }
 
