@@ -4,14 +4,6 @@
 
 {% block content %}
 
-<!-- Set session var for char_id -->
-
-{% if char_id %}
-    <script>
-        sessionStorage.setItem('char_id', {{ char_id }});
-    </script>
-{% endif %}
-
 <!-- Main Content -->
     <div class="container mx-auto">
       <div class="grid grid-cols-3">
@@ -37,17 +29,19 @@
               <div class="label">
                   <button id="player-turn" class="btn btn-neutral"> Select Action </button>
               </div>
-              <div id="game board" class="grid grid-rows-3 grid-flow-col gap-5 font-mono text-white text-sm text-center font-bold leading-6 rounded-lg">
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Study</div>
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Ballroom</div>
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Billiards Room</div>
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Dining Room</div>
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Hall</div>
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Kitchen</div>
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Lounge</div>
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Conservatory</div>
-                <div class="p-20 rounded-lg shadow-lg bg-blue-500">Library</div>
-              </div>
+              <div id="game-board" class="grid grid-rows-5 grid-flow-col gap-5 font-mono text-white text-sm text-center font-bold leading-6 rounded-lg">
+                {% for row in locations %}
+                    {% for location in row %}
+                        {% if location.location_id in blank_ids %}
+                            <div id="{{ location.location_id }}" class="p-20 rounded-lg shadow-lg opacity-0" role="button">{{ location.name }}</div>
+                        {% elif location.location_id in hallway_ids  %}
+                            <div id="{{ location.location_id }}" class="p-20 rounded-lg shadow-lg bg-gray-500 opacity-55" role="button">{{ location.name }}</div>
+                        {% else %}
+                            <div id="{{ location.location_id }}" class="p-20 rounded-lg shadow-lg bg-blue-500" role="button">{{ location.name }}</div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
           </div>
           <div class="col-span-1">
   
@@ -67,12 +61,19 @@
   {% block script %}
 
 <script>
-   
+
+    // Game Session Websocket
     const activitySocket = new WebSocket(
         'ws://'
         + window.location.host
-        + '/ws/clueless/gameplay/'
+        + '/ws/clueless/gamestate/'
     );
+
+    activitySocket.onclose = function (e) {
+        console.error('Chat socket closed unexpectedly');
+    }
+
+    // Enable the "Player Turn" button
 
     activitySocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
@@ -87,24 +88,63 @@
         }
     };
 
-    activitySocket.onclose = function (e) {
-        console.error('Chat socket closed unexpectedly');
-    }
+    // Log messages from the game session
+
 
     activitySocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
         const playerLog = document.querySelector('#player-log');
-        playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
+        if (data.success === false) {
+            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble-error">' + data.message + '</div></div>';
+        } else if (data.success === true) {
+            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble-success">' + data.message + '</div></div>';
+        } else {
+            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
+        }
         playerLog.scrollTop = playerLog.scrollHeight;
     };
 
-    document.querySelector('#action-select').onclick = function() {
-        const action = document.querySelector('#player-select').value;
-        {% comment %} const charID = sessionStorage.getItem('char_id'); {% endcomment %}
+    // Register player turn for any location on the game board
+
+    document.querySelector('#game-board').onclick = function(e) {
+        console.log("Clicked " + e.target.id);
+        const location = e.target.id;
+        // get char id from url path
+        const charID = window.location.href.split('/').pop();
 
         activitySocket.send(JSON.stringify({
-            'message': "Selected " + action
+            'message': "Selected " + location,
+            'char_id': charID,
+            'location_id': location,
+            'subtype': 'player_move',
+            "type": "status.update"
         }));
+    };
+
+
+
+    // User Session Websocket
+
+    const currentCharID = window.location.href.split('/').pop(); 
+   
+    const playerActivitySocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/clueless/usersession/'
+        + window.location.href.split('/').pop()
+    );
+
+    playerActivitySocket.onclose = function (e) {
+        console.error('Chat socket closed unexpectedly');
+    }
+
+    playerActivitySocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const playerLog = document.querySelector('#player-log');
+       
+        playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div><div class="chat-footer opacity-50">Private</div></div>';
+
+        playerLog.scrollTop = playerLog.scrollHeight;
     };
 
 

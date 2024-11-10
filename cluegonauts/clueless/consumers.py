@@ -3,11 +3,10 @@ import threading
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import uuid
-
-from .classes import CardHandler
-from .models import GameSession
-from .utils import select_character, connect_game_state_consumer
-
+import requests
+from django.urls import reverse
+from .utils import connect_game_state_consumer
+import asyncio
 
 class GamePlayersConsumer(WebsocketConsumer):
     def connect(self):
@@ -35,14 +34,21 @@ class GamePlayersConsumer(WebsocketConsumer):
         session_id = self.scope["session"].get("game_session", None)
 
         if text_data_json["subtype"] == "select_player":
-            status, session_id = select_character(char_id, session_id) # returns true if character is successfully selected, false if character is already selected or unavailable
-            if status:
+            # dynamically get the url for the select character view
+            select_character_url = reverse("clueless:select_character")
+            response = requests.post(f"http://localhost:8000/{select_character_url}", json={
+                'char_id': char_id,
+                'session_id': session_id
+            })
+            if response.status_code == 200:
+                data = response.json()
+                session_id = data['session_id']
                 async_to_sync(self.channel_layer.group_send)(
-                    self.room_group_name, {"type": "status_update", "subtype": "select_player", "message":  message,
+                    self.room_group_name, {"type": "status.update", "subtype": "select_player", "message":  message,
                                            "char_selected": char_id, "session_id": str(session_id)}
                 )
 
-                if "game_session" not in self.scope["session"] and status:
+                if "game_session" not in self.scope["session"]:
                     thread = threading.Thread(target=connect_game_state_consumer, daemon=True)
                     thread.start()
                     # convert uuid to string and store in session
@@ -50,7 +56,7 @@ class GamePlayersConsumer(WebsocketConsumer):
                     self.scope["session"].save()
         elif text_data_json["subtype"] == "start_game":
             async_to_sync(self.channel_layer.group_send)(
-                self.room_group_name, {"type": "status_update", "subtype": "start_game", "message": message,
+                self.room_group_name, {"type": "status.update", "subtype": "start_game", "message": message,
                                        "char_selected": char_id}
             )
 
@@ -92,6 +98,7 @@ class GamePlayersConsumer(WebsocketConsumer):
         message = event["message"]
         char_id = event["char_selected"]
         self.send(text_data=json.dumps({"message": message, "char_selected": char_id}))
+        # Unlock the start game button if there are at least 2 players
 
 
 class GameStateConsumer(WebsocketConsumer):
@@ -114,23 +121,25 @@ class GameStateConsumer(WebsocketConsumer):
             self.room_group_name, self.channel_name
         )
 
-    def unlock_start(self, session_id):
-        game_session = GameSession()
-        session_player_list = game_session.get_selected_players(session_id)
-        if len(session_player_list) >= 2:
-            async_to_sync(self.channel_layer.group_send)(
-                self.room_group_name,
-                {"type": "status.update", "subtype": "unlock_start"}
-            )
+    def unlock_start(self, session_id = None):
+        get_characters_url = reverse("clueless:get_characters")
+        response = requests.get(f"http://localhost:8000/{get_characters_url}")
+        if response.status_code == 200:
+            data = response.json()
+            selected_player_list = data["selected_characters"]
+            if len(selected_player_list) >= 2:
+                async_to_sync(self.channel_layer.group_send)(
+                    self.room_group_name,
+                    {"type": "status.update", "subtype": "unlock_start"}
+                )
 
     def status_update(self, event):
         if "send_to" in event and event["send_to"] != "gamestate":
             return
         match event["subtype"]:
             case "select_player":
-                session_id = self.scope["session"].get("game_session")
-                if session_id is not None:
-                    self.unlock_start(session_id)
+                session_id = self.scope["session"].get("game_session", None)
+                self.unlock_start(session_id)
             case "session_id":
                 if "game_session" not in self.scope["session"]:
                     session_id = event["message"]
@@ -140,6 +149,8 @@ class GameStateConsumer(WebsocketConsumer):
                     self.unlock_start(session_id) # check if enough players joined before GameStateConsumer started
             case "start_game":
                 self.setup_game()
+            case "player_move":
+                self.player_move(event)     
 
     def status_request(self, event):
         if "send_to" in event and event["send_to"] != "gamestate":
@@ -151,48 +162,76 @@ class GameStateConsumer(WebsocketConsumer):
                     self.room_group_name, {"type": "status.update", "subtype": "session_id" ,"message": session_id,
                                            "send_to": event["reply_to"]}
                 )
-
     def setup_game(self):
         session_id = self.scope["session"].get("game_session", None)
 
-        card_handler = CardHandler()
-        selected_cards = [card.id for card in card_handler.select_case_file()]
-        game_session = GameSession()
-        game_session.set_case_file_cards(selected_cards, session_id)
+        setup_game_url = reverse("clueless:setup_game")
+        response = requests.post(f"http://localhost:8000/{setup_game_url}", json={"session_id": session_id})
+        if response.status_code == 200:
+            data = response.json()
+            current_turn = data["current_turn"]
+            card_selection = data["card_selection"]
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name, {"type": "status.update", "subtype": "redirect_game"}
+            )
+            # send message to the player that it is their turn
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_{current_turn}_session", 
+                {"type": "unlock.turn", "char_id": current_turn}
+            )
+            # send message to each player with their cards
+            for char_id, cards in card_selection.items():
+                async_to_sync(self.channel_layer.group_send)(
+                    f"gameroom_{char_id}_session", 
+                    {"type": "status.update", "message": f"Your cards are: {[card.id for card in cards]}"}
+                )
 
-        self.player_card_dict = card_handler.deal_cards(game_session.get_selected_players(session_id))
-        game_session.set_player_cards(self.player_card_dict, session_id)
+    def player_move(self, event):
+        """
+        Handle player moves - check that the move is valid and update the game state
 
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name, {"type": "status.update", "subtype": "redirect_game"}
-        )
-
-        game_session.set_current_turn(game_session.get_selected_players(session_id)[0], session_id)
+        """
+        move_location = event["location_id"]
+        char_id = event["char_id"]
+        player_move_url = reverse("clueless:player_move")
+        response = requests.post(f"http://localhost:8000/{player_move_url}", json={"location_id": move_location,
+                                                                                     "char_id": char_id})
         
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name, {"type": "status.update", "subtype": "next.player","player":game_session.get_selected_players(session_id)[0] }
-        )
-class GameControlConsumer(WebsocketConsumer):
+        if response.status_code == 200:
+            data = response.json()
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_{char_id}_session", 
+                {"type": "status.update", 
+                 "message": data["message"],
+                 "success": True}
+            )
+        elif response.status_code == 400:
+            data = response.json()
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_{char_id}_session", 
+                {"type": "status.update", 
+                 "message": data["message"],
+                 "success": False}
+            )
+
+class PlayerNotificationConsumer(WebsocketConsumer):
     def connect(self):
-        self.room_name = "gamesession"
+        char_id = self.scope['url_route']['kwargs']['char_id']
+        self.room_name = f"{char_id}_session"
         self.room_group_name = f"gameroom_{self.room_name}"
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name, self.channel_name
         )
         self.accept()
+        self.send(text_data=json.dumps({"message": f"You have joined the game, {char_id}"}))
 
     def disconnect(self, close_code): # noqa: ARG002 ; ignore ruff warning for unused parameter
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name, self.channel_name
         )
 
-    def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json["message"]
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name, {"type": "game.log", "message": message}
-        )
+    def unlock_turn(self, event):
+        self.send(text_data=json.dumps({"message": "It is your turn", "unlock": "turn"}))
 
-    def game_log(self, event):
-        message = event["message"]
-        self.send(text_data=json.dumps({"message": message}))
+    def status_update(self, event):
+        self.send(text_data=json.dumps({"message": event["message"], "success": event["success"]}))
