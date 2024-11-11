@@ -1,6 +1,7 @@
-from .classes import CharacterHandler, LocationHandler, CardHandler
+from .classes import CharacterHandler, LocationHandler, CardHandler, currentGameSession
 from .models import GameSession
 import injector
+from uuid import UUID
 
 class GameStateModule(injector.Module):
     """
@@ -25,3 +26,9 @@ class GameStateModule(injector.Module):
     @injector.provider
     def provide_game_session(self) -> GameSession:
         return GameSession()
+    
+    @injector.singleton
+    @injector.provider
+    def provide_game_session_id(self) -> currentGameSession:
+        session_id = self.provide_game_session().create_game_session()
+        return currentGameSession(session_id)

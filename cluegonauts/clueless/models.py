@@ -11,7 +11,7 @@ class GameSession(models.Model):
     A model to store the game session information
     """
     session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    selected_players = models.JSONField()
+    selected_players = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     case_file_cards = models.JSONField(default=None, null=True)
     player_cards = models.JSONField(default=None, null=True)
@@ -20,6 +20,14 @@ class GameSession(models.Model):
 
     def __str__(self):
         return self.session_id
+    
+    def create_game_session(self):
+        """
+        Create a new game session
+        """
+        session_id = uuid.uuid4()
+        GameSession.objects.create(session_id=session_id)
+        return session_id
 
     def get_selected_players(self, session_id):
         """

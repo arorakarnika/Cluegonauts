@@ -13,6 +13,7 @@
                       What would you like to do:
                   </span>
               </div>
+              <button class="btn" onclick="player_suggestion.showModal()">Make a Suggestion</button>
               <select id="player-select" class="select select-primary w-full max-w-xs" control-id="ControlID-1">
                   <option value="Move to Study">Move to Study</div>
                   <option value="Move to Ballroom">Move to Ballroom</div>
@@ -56,6 +57,32 @@
       </div>
   </div>
 
+  <!-- Player suggestion modal -->
+
+  <dialog id="player_suggestion" class="modal">
+    <div class="modal-box">
+      <h3 class="text-lg font-bold">Make a Sugegstion!</h3>
+        <form method="dialog">
+            {% csrf_token %} 
+          {{ player_action_form }}
+          <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+          <button class="btn btn-primary" id="submit_suggest">Submit</button>
+        </form>
+    </div>
+  </dialog>
+
+  <!-- Disprove suggestion modal -->
+   <dialog id="disprove_suggestion" class="modal">
+    <div class="modal-box">
+      <h3 class="text-lg font-bold">Disprove Suggestion</h3>
+        <form method="dialog">
+            {% csrf_token %} 
+          {{ disprove_form }}
+          <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+          <button class="btn btn-primary" id="submit_disprove">Submit</button>
+        </form>
+    </div>
+
   {% endblock %}
   
   {% block script %}
@@ -66,7 +93,7 @@
     const activitySocket = new WebSocket(
         'ws://'
         + window.location.host
-        + '/ws/clueless/gamestate/'
+        + '/ws/clueless/gameroom/'
     );
 
     activitySocket.onclose = function (e) {
@@ -141,11 +168,60 @@
     playerActivitySocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
         const playerLog = document.querySelector('#player-log');
-       
-        playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div><div class="chat-footer opacity-50">Private</div></div>';
 
-        playerLog.scrollTop = playerLog.scrollHeight;
+        // show card select popup if disprove suggestion message
+        if (data.message === 'disprove_suggestion') {
+            const disproveSuggestionModal = document.querySelector('#disprove_suggestion');
+            const actor = data.actor;
+            const disproveSuggestionForm = document.querySelector('#disprove_suggestion form');
+            // set actor name in form
+            disproveSuggestionForm.actor.value = actor;
+            disproveSuggestionModal.showModal();
+        } else {
+            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div><div class="chat-footer opacity-50">Private</div></div>';
+            playerLog.scrollTop = playerLog.scrollHeight;
+        }
+
     };
+
+    // Handle form submission for player suggestion
+
+    document.querySelector('#submit_suggest').onclick = function(e) {
+        e.preventDefault();
+        const suggestionModal = document.querySelector('#player_suggestion');
+        const suggestionForm = document.querySelector('#player_suggestion form');
+        const formData = new FormData(suggestionForm);
+        const charID = window.location.href.split('/').pop();
+        formData.append('char_id', charID);
+        activitySocket.send(JSON.stringify({
+            'message': "Made a suggestion",
+            'char_id': charID,
+            'subtype': 'player_suggestion',
+            'data': Object.fromEntries(formData)
+        }));
+        suggestionForm.reset();
+        suggestionModal.close();
+    };
+
+    // Handle disprove form suggestion
+    document.querySelector("#submit_disprove").onclick = function(e) {
+        e.preventDefault();
+        const disproveSuggestionModal = document.querySelector('#disprove_suggestion');
+        const disproveForm = document.querySelector('#disprove_suggestion form');
+        const formData = new FormData(disproveForm);
+        const charID = window.location.href.split('/').pop();
+        formData.append('char_id', charID);
+        activitySocket.send(JSON.stringify({
+            'message': "Disproved suggestion",
+            'type': 'status.update',
+            'char_id': charID,
+            'subtype': 'disprove_suggestion',
+            'data': Object.fromEntries(formData)
+        }));
+        disproveForm.reset();
+        disproveSuggestionModal.close();
+    }
+
 
 
 
