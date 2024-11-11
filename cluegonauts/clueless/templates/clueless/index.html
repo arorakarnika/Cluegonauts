@@ -83,8 +83,6 @@
             // Set selected player to hidden in dropdown
             const selectedPlayer = document.querySelector('#player-select option[value="' + data.char_selected + '"]');
             selectedPlayer.disabled = true;
-            document.querySelector('#selected-character-name').innerText = selectedPlayer.text;
-            document.querySelector('#selected-character-id').innerText = data.char_selected;
             // Unselect the selected player
         }
 
@@ -102,6 +100,8 @@
             'char_selected': selectedPlayerID,
             'subtype': 'select_player'
         }));
+        document.querySelector('#selected-character-name').innerText = selectedPlayerName;
+        document.querySelector('#selected-character-id').innerText = selectedPlayerID;
     };
 
     document.querySelector('#start-game').onclick = function (e) {

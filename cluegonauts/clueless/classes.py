@@ -2,7 +2,11 @@ import random
 from collections import defaultdict
 from attrs import define
 from typing import List, Optional, Dict
+from uuid import UUID
 
+@define
+class currentGameSession:
+    session_id: UUID
 @define
 class Card:
     name: str
@@ -37,12 +41,12 @@ class CharacterHandler:
         The image property is optional and can be used to display the character image in the UI
         It should correspond to the filename of the image in the cluegonauts/static/clueless/images/ directory
         """
-        self.characters: List[Character] = [Character(name="Miss Scarlet", image="scarlet.png", char_id="ms_scarlet"),
-                                            Character(name="Colonel Mustard", image="mustard.png", char_id="col_mustard"),
-                                            Character(name="Mrs. White", image="white.png", char_id="mrs_white"),
-                                            Character(name="Mr. Green", image="green.png", char_id="mr_green"),
-                                            Character(name="Mrs. Peacock", image="peacock.png", char_id="mrs_peacock"),
-                                            Character(name="Professor Plum", image="plum.png", char_id="prof_plum")]
+        self.characters: List[Character] = [Character(name="Miss Scarlet", image="scarlet.png", char_id="ms_scarlet", location=LocationHandler().get_location_by_id("hallway_1")),
+                                            Character(name="Colonel Mustard", image="mustard.png", char_id="col_mustard", location=LocationHandler().get_location_by_id("hallway_2")),
+                                            Character(name="Mrs. White", image="white.png", char_id="mrs_white", location=LocationHandler().get_location_by_id("hallway_5")),
+                                            Character(name="Mr. Green", image="green.png", char_id="mr_green", location=LocationHandler().get_location_by_id("hallway_10")),
+                                            Character(name="Mrs. Peacock", image="peacock.png", char_id="mrs_peacock", location=LocationHandler().get_location_by_id("hallway_11")),
+                                            Character(name="Professor Plum", image="plum.png", char_id="prof_plum", location=LocationHandler().get_location_by_id("hallway_12"))]
         # Set selected property to True for characters that are already selected
         for char_id in selected:
             self.set_selected(char_id)
@@ -100,7 +104,7 @@ class CharacterHandler:
         for char_id, cards in card_selection.items():
             for character in self.characters:
                 if character.char_id == char_id:
-                    character.cards.extend(cards)
+                    character.cards = cards
     
 
 
