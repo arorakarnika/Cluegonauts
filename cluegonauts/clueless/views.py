@@ -1,3 +1,4 @@
+from email import message
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from injector import inject
@@ -47,8 +48,15 @@ def gameb(request, char_id, loc_handler: LocationHandler, card_handler: CardHand
                    "blank_ids": blank_ids,
                    "hallway_ids": hallway_ids,
                    "player_action_form": form,
-                   "disprove_form": disprove_form
+                   "disprove_form": disprove_form,
+                   "player_cards": char_handler.get_character_by_id(char_id).cards,
+                   "current_location": char_handler.get_character_by_id(char_id).location,
+                   "current_char": char_handler.get_character_by_id(char_id),
                    })
+
+def game_end(request, winner, char_handler: CharacterHandler):
+    winner_name = char_handler.get_character_by_id(winner).name
+    return render(request, "clueless/end_game.html", {"winner": winner_name})
 
 """ 
 
@@ -105,12 +113,11 @@ class SetupGame(APIView):
         # Deal cards to players
         selected_players = self.char_handler.serialize_selected()
         card_selection = self.card_handler.deal_cards(selected_players)
-        print(f"Card selection: {card_selection}")
         self.char_handler.update_character_cards(card_selection)
-        print(f"Character cards: {self.char_handler.get_all_characters()}")
         # Save the cards to the game session table, creates a new session if session_id is None
         session_id = self.game_session.update_selected_players(selected_players, session_id)
         self.game_session.set_case_file_cards([card.id for card in self.card_handler.case_file], session_id)
+        print(f"Case file cards: {[card.name for card in self.card_handler.case_file]}".center(100, "+"))
         self.game_session.set_current_turn(selected_players[0], session_id)
         request.session["game_session"] = str(session_id)
 
@@ -121,9 +128,11 @@ class SetupGame(APIView):
     
     def get(self, request):
         session_id = self.current_game_session.session_id
+        selected_chars = self.char_handler.get_selected_characters()
         return Response({
             "case_file": self.game_session.get_case_file_cards(session_id),
-            "card_selection": { char.char_id: [card.name for card in char.cards] for char in self.char_handler.get_selected_characters() },
+            "card_selection": { char.char_id: [card.name for card in char.cards] for char in selected_chars },
+            "char_loc_icons": {char.char_id: (char.location.location_id, char.image) for char in selected_chars},
             "current_turn": self.game_session.get_current_turn(session_id)
             }, status=status.HTTP_200_OK)
 
@@ -153,15 +162,16 @@ class PlayerMove(APIView):
         current_location = self.char_handler.get_character_by_id(char_id).location
         if current_location.location_id == location_id:
             return Response({"message": "Player is already in this location"}, status=status.HTTP_400_BAD_REQUEST)
-        elif location_id not in current_location.connected_location:
-            return Response({"message": "Invalid move"}, status=status.HTTP_400_BAD_REQUEST)
+        elif location_id not in current_location.connected_location and location_id != current_location.secret_passage_to:
+                return Response({"message": f"Invalid move from {current_location.name} to {location_id}, your choices are {current_location.connected_location} "}, status=status.HTTP_400_BAD_REQUEST)
         elif self.loc_handler.get_location_by_id(location_id).is_occupied:
             return Response({"message": "Location is occupied"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             # Update player location
             self.char_handler.get_character_by_id(char_id).location = self.loc_handler.get_location_by_id(location_id)
 
-            return Response({"message": f"You have successfully moved to {self.loc_handler.get_location_by_id(location_id).name}"}, status=status.HTTP_200_OK)
+            return Response({"message": f"You have successfully moved to {self.loc_handler.get_location_by_id(location_id).name}",
+                             "char_loc_icons": {char_id: (location_id, self.char_handler.get_character_by_id(char_id).image)}}, status=status.HTTP_200_OK)
 
 
 class PlayerCards(APIView):
@@ -232,4 +242,69 @@ class PlayerSuggestionView(APIView):
                          "message": message, 
                          "chars_can_disprove": char_ids_can_disprove,
                          "suggestion_correct": suggestion_correct,
-                         "actor_name": actor_name}, status=status.HTTP_200_OK)
+                         "actor_name": actor_name,
+                         "char_loc_icons": {character: (location, self.char_handler.get_character_by_id(character).image)}}, status=status.HTTP_200_OK)
+    
+class PlayerAccusationView(APIView):
+    @inject
+    def setup(self, request, game_session: GameSession, 
+              char_handler: CharacterHandler, 
+              loc_handler: LocationHandler,
+              card_handler: CardHandler):
+        super().setup(request)
+        self.game_session = game_session
+        self.char_handler = char_handler
+        self.loc_handler = loc_handler
+        self.card_handler = card_handler
+
+
+    def post(self, request):
+        character = request.data.get('character')
+        location = request.data.get('location')
+        weapon = request.data.get('weapon')
+        actor = request.data.get('actor')
+        actor_name = self.char_handler.get_character_by_id(actor).name
+        char_name = self.char_handler.get_character_by_id(character).name
+        
+        # Check if the accusation is correct
+        case_file = self.card_handler.case_file
+        correct_accusation = True
+        for card_id in [character, location, weapon]:
+            if card_id not in [card.id for card in case_file]:
+                correct_accusation = False
+                break
+        message = f"{actor_name} accused {char_name} with a {weapon} in the {location}"
+        if correct_accusation:
+            message += f" and it was correct!"
+        else:
+            message += f" and it was incorrect."
+
+        return Response({
+            "success": correct_accusation, 
+            "message": message,
+            "actor_name": actor_name,
+            "actor": actor}, status=status.HTTP_200_OK)
+
+class TurnHandler(APIView):
+    @inject
+    def setup(self, request, game_session: GameSession, 
+              char_handler: CharacterHandler, current_game_session: currentGameSession):
+        super().setup(request)
+        self.game_session = game_session
+        self.char_handler = char_handler
+        self.current_game_session = current_game_session
+
+    def post(self, request):
+        current_turn = request.data.get('current_turn')
+        session_id = self.current_game_session.session_id
+        selected_players = self.char_handler.serialize_selected()
+        current_turn_index = selected_players.index(current_turn)
+        next_turn_index = (current_turn_index + 1) % len(selected_players)
+        next_turn = selected_players[next_turn_index]
+        self.game_session.set_current_turn(next_turn, session_id)
+        message = f"It is {self.char_handler.get_character_by_id(next_turn).name}'s turn"
+        return Response({"current_turn": next_turn, "message": message, "char_name": self.char_handler.get_character_by_id(next_turn).name }, status=status.HTTP_200_OK)
+    
+    def get(self, request):
+        session_id = self.current_game_session.session_id
+        return Response({"current_turn": self.game_session.get_current_turn(session_id)}, status=status.HTTP_200_OK)

@@ -41,12 +41,12 @@ class CharacterHandler:
         The image property is optional and can be used to display the character image in the UI
         It should correspond to the filename of the image in the cluegonauts/static/clueless/images/ directory
         """
-        self.characters: List[Character] = [Character(name="Miss Scarlet", image="scarlet.png", char_id="ms_scarlet", location=LocationHandler().get_location_by_id("hallway_1")),
-                                            Character(name="Colonel Mustard", image="mustard.png", char_id="col_mustard", location=LocationHandler().get_location_by_id("hallway_2")),
-                                            Character(name="Mrs. White", image="white.png", char_id="mrs_white", location=LocationHandler().get_location_by_id("hallway_5")),
-                                            Character(name="Mr. Green", image="green.png", char_id="mr_green", location=LocationHandler().get_location_by_id("hallway_10")),
-                                            Character(name="Mrs. Peacock", image="peacock.png", char_id="mrs_peacock", location=LocationHandler().get_location_by_id("hallway_11")),
-                                            Character(name="Professor Plum", image="plum.png", char_id="prof_plum", location=LocationHandler().get_location_by_id("hallway_12"))]
+        self.characters: List[Character] = [Character(name="Miss Scarlet", image="scarlet.png", char_id="ms_scarlet", location=LocationHandler().get_location_by_id("hallway_2")),
+                                            Character(name="Colonel Mustard", image="mustard.png", char_id="col_mustard", location=LocationHandler().get_location_by_id("hallway_5")),
+                                            Character(name="Mrs. White", image="white.png", char_id="mrs_white", location=LocationHandler().get_location_by_id("hallway_12")),
+                                            Character(name="Mr. Green", image="green.png", char_id="mr_green", location=LocationHandler().get_location_by_id("hallway_11")),
+                                            Character(name="Mrs. Peacock", image="peacock.png", char_id="mrs_peacock", location=LocationHandler().get_location_by_id("hallway_8")),
+                                            Character(name="Professor Plum", image="plum.png", char_id="prof_plum", location=LocationHandler().get_location_by_id("hallway_3"))]
         # Set selected property to True for characters that are already selected
         for char_id in selected:
             self.set_selected(char_id)
@@ -123,12 +123,13 @@ class LocationHandler:
                 Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen"), 
                 Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"]), 
                 Location(location_id="hall", name="Hall", connected_location=["hallway_2", "hallway_4", "hallway_1"]), 
-                Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), Location(location_id="lounge", name="Lounge", connected_location=["hallway_5", "hallway_2"], has_secret_passage=True, secret_passage_to="conservatory")
+                Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), 
+                Location(location_id="lounge", name="Lounge", connected_location=["hallway_5", "hallway_2"], has_secret_passage=True, secret_passage_to="conservatory")
             ],
             [
                 Location(location_id="hallway_3", name="Hallway 3", connected_location=["study", "library"]),
                 Location(location_id="blank_1", name="Blank 1", connected_location=["hallway_1", "hallway_6"]), 
-                Location(location_id="hallway_4", name="Hallway 4", connected_location=["hall", "billiard room"]), 
+                Location(location_id="hallway_4", name="Hallway 4", connected_location=["hall", "billiard_room"]), 
                 Location(location_id="blank_2", name="Blank 2", connected_location=["hallway_2", "hallway_7"]), 
                 Location(location_id="hallway_5", name="Hallway 5", connected_location=["lounge", "dining_room"])
             ],
@@ -139,7 +140,7 @@ class LocationHandler:
                 Location(location_id="hallway_7", name="Hallway 7", connected_location=["billiard_room", "dining_room"]), 
                 Location(location_id="dining_room", name="Dining Room", connected_location=["hallway_5", "hallway_10", "hallway_7"])
             ],
-            [
+            [ 
                 Location(location_id="hallway_8", name="Hallway 8", connected_location=["library", "conservatory"]), 
                 Location(location_id="blank_3", name="Blank 3", connected_location=["hallway_6", "hallway_8"]), 
                 Location(location_id="hallway_9", name="Hallway 9", connected_location=["billiard_room", "ballroom"]), 
@@ -233,7 +234,7 @@ class CardHandler:
                                             Card(name="Mrs. White", image="card_white.png", id="mrs_white"),
                                             Card(name="Mr. Green", image="card_green.png", id="mr_green"),
                                             Card(name="Mrs. Peacock", image="card_peacock.png", id="mrs_peacock"),
-                                            Card(name="Professor Plum", image="_cardplum.png", id="prof_plum")]
+                                            Card(name="Professor Plum", image="card_plum.png", id="prof_plum")]
         self.weapon_card: List[Card] = [Card(name="Candlestick", image="candlestick.png", id="candlestick"),
                                         Card(name="Knife", image="knife.png", id="knife"),
                                         Card(name="Lead pipe", image="lead_pipe.png", id="lead_pipe"),
@@ -257,9 +258,9 @@ class CardHandler:
         random.shuffle(self.character_card)
         random.shuffle(self.weapon_card)
         random.shuffle(self.location_card)
-        case_file_char = self.character_card.pop(-1)
-        case_file_weapon = self.weapon_card.pop(-1)
-        case_file_location = self.location_card.pop(-1)
+        case_file_char = self.character_card[-1]
+        case_file_weapon = self.weapon_card[-1]
+        case_file_location = self.location_card[-1]
         return case_file_char, case_file_weapon, case_file_location
 
     def deal_cards(self, player_list):
@@ -267,6 +268,8 @@ class CardHandler:
         card_pool.extend(self.character_card)
         card_pool.extend(self.weapon_card)
         card_pool.extend(self.location_card)
+        # remove case file cards from card pool
+        card_pool = [card for card in card_pool if card not in self.case_file]
         random.shuffle(card_pool)
 
         player_card_dict = defaultdict(list)
