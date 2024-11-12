@@ -1,0 +1,42 @@
+{% extends 'clueless/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/site/site.min.css" rel="stylesheet">
+
+</head>
+
+<div class="container mx-auto">
+    <!--Winner -->
+    
+    <div class="hero">
+        <div class="hero-content text-center">
+          <div class="max-w-md">
+            <h1 class="text-5xl font-bold">Congratulations! The winner is: {{ winner }}</h1>
+          </div>
+        </div>
+      </div>
+    <canvas id="my-canvas">
+
+    </canvas>
+    
+  </div>
+
+
+
+
+
+{% endblock %}
+
+{% block script %}
+<script>
+    var confettiSettings = { target: 'my-canvas' };
+    var confetti = new ConfettiGenerator(confettiSettings);
+    confetti.render();
+
+</script>
+
+{% endblock %}

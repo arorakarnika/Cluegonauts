@@ -25,6 +25,9 @@ class GamePlayersConsumer(WebsocketConsumer):
 
     # Receive message from WebSocket
     def receive(self, text_data):
+        """
+        Receive a message from the websocket and process it
+        """
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
         char_id  = text_data_json.get("char_selected", None)
@@ -53,7 +56,19 @@ class GamePlayersConsumer(WebsocketConsumer):
                 )
             self.send(text_data=json.dumps({"message": f"{text_data_json['char_id']} disproved the suggestion"}))
 
+        elif text_data_json["subtype"] == "player_accusation":
+            self.handle_accusation(text_data_json)
+
+        elif text_data_json["subtype"] == "character_locations":
+            self.get_char_locations()
+
+        elif text_data_json["subtype"] == "end_turn":
+            self.turn_handoff(text_data_json)
+
     def status_update(self, event):
+        """
+        Receive a status update from another consumer and process it
+        """
         if "send_to" in event and event["send_to"] != "gameplayer":
             return
         match event["subtype"]:
@@ -73,6 +88,12 @@ class GamePlayersConsumer(WebsocketConsumer):
                 self.send(text_data=json.dumps({"message": "unlock_start"}))
             case "redirect_game":
                 self.send(text_data=json.dumps({"message": "redirect_game"}))
+            case "send_game_message":
+                self.send(text_data=json.dumps({"message": event["message"]}))
+            case "game_over":
+                self.send(text_data=json.dumps({"message": "game_over", "message_text": event["message"], "winner": event["actor"]}))
+            case "character_locations":
+                self.send(text_data=json.dumps({"message": "character_locations", "char_loc_icons": event["char_loc_icons"]}))
 
     def status_request(self, event):
         if "send_to" in event and event["send_to"] != "gameplayer":
@@ -128,6 +149,9 @@ class GamePlayersConsumer(WebsocketConsumer):
                                            "send_to": event["reply_to"]}
                 )
     def setup_game(self):
+        """
+        This is called when someone clicks the start game button
+        """
         session_id = self.scope["session"].get("game_session", None)
 
         setup_game_url = reverse("clueless:setup_game")
@@ -142,32 +166,20 @@ class GamePlayersConsumer(WebsocketConsumer):
                                        "current_turn": current_turn,
                                        "card_selection": card_selection}
             )
+    def get_char_locations(self):
+        """
+        Called to get the character locations to display on the game board
+        """
+        get_char_loc_url = reverse("clueless:setup_game")
+        response = requests.get(f"http://localhost:8000/{get_char_loc_url}")
+        if response.status_code == 200:
+            data = response.json()
+            char_loc_icons = data["char_loc_icons"]
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name, {"type": "status.update", "subtype": "character_locations", "char_loc_icons": char_loc_icons}
+            )
 
     def handle_suggestion(self, event):
-        """
-        f"gameroom_gameroom", 
-            {"type": "status.update", 
-             "message": message,
-             "subtype": "suggestion",
-             "actor": actor,
-             "suggestion": {"character": character, "location": location, "weapon": weapon},
-             "success": True}
-                     character = request.data.get('character')
-        location = request.data.get('location')
-        weapon = request.data.get('weapon')
-        session_id = request.session.get('game_session')
-        actor = request.data.get('actor')
-              async_to_sync(channel_layer.group_send)(
-            f"gameroom_gameroom", 
-            {"type": "status.update", 
-             "message": message,
-             "subtype": "suggestion",
-             "actor": actor,
-             "actor_name": actor_name,
-             "suggestion": {"character": character, "location": location, "weapon": weapon},
-             "success": True}
-        )
-        """
         actor = event["char_id"]
         form_data = event["data"]
         message = event["message"]
@@ -188,14 +200,32 @@ class GamePlayersConsumer(WebsocketConsumer):
             actor_name = data["actor_name"]
             suggestion_correct = data["suggestion_correct"]
             # Notify all players of the suggestion
-            self.send(text_data=json.dumps({"message": message}))
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_gameroom", 
+                {"type": "status.update", 
+                 "message": message,
+                 "subtype": "send_game_message",
+                 }
+            )
+            # Move the player on the game board
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_gameroom", {"type": "status.update",
+                                        "subtype": "character_locations",
+                                        "char_loc_icons": data["char_loc_icons"]}
+            )
             if suggestion_correct:
-                self.send(text_data=json.dumps({"message": f"{actor_name} has won the game!"}))
+                async_to_sync(self.channel_layer.group_send)(
+                    f"gameroom_gameroom", 
+                    {"type": "status.update", 
+                     "message": f"{actor_name} has won the game!",
+                     "subtype": "game_over",
+                     "actor": actor}
+                )
             else:
                 # Notify the player who was moved to the suggested location
                 async_to_sync(self.channel_layer.group_send)(
                     f"gameroom_{moved_player}_session", {"type": "status.update", 
-                                                        "message": f"{message}.\n{actor_name} moved you to {location}", 
+                                                        "message": f"{actor_name} moved you to {location}", 
                                                         "success": success}
                 )
                 # Notify players who can disprove the suggestion
@@ -216,6 +246,54 @@ class GamePlayersConsumer(WebsocketConsumer):
                 f"gameroom_{actor}_session", {"type": "status.update", "message": message, "success": success}
             )
 
+    def handle_accusation(self, event):
+        actor = event["char_id"]
+        form_data = event["data"]
+        moved_player = form_data["character"]
+        location = form_data["location"]
+        weapon = form_data["weapon"]
+        response = requests.post(f"http://localhost:8000/{reverse('clueless:accuse')}", 
+                                 json={
+                                        "character": moved_player,
+                                        "location": location,
+                                        "weapon": weapon,
+                                        "actor": actor
+                                    })
+        if response.status_code == 200:
+            data = response.json()
+            success = data["success"]
+            message = data["message"]
+            actor = data["actor"]
+            actor_name = data["actor_name"]
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_gameroom", 
+                {"type": "status.update", 
+                 "message": message,
+                 "subtype": "send_game_message",
+                 }
+            )
+            if success:
+                # Send accuser a message that they have won
+                async_to_sync(self.channel_layer.group_send)(
+                    f"gameroom_{actor}_session", {"type": "status.update", "message": "You have won!", "success": success}
+                )
+                # Send all other players a message that the game is over
+                async_to_sync(self.channel_layer.group_send)(
+                    f"gameroom_gameroom", 
+                    {"type": "status.update", 
+                     "message": f"{actor_name} has won the game!",
+                     "subtype": "game_over",
+                     "actor": actor}
+                )
+            elif not success:
+                # Send accuser a message that they cannot make more accusations
+                async_to_sync(self.channel_layer.group_send)(
+                    f"gameroom_{actor}_session", {"type": "accusation.fail", 
+                                                  "message": "You cannot make any more accusations.", 
+                                                  "success": success}
+                )
+
+
     def player_move(self, event):
         """
         Handle player moves - check that the move is valid and update the game state
@@ -235,6 +313,20 @@ class GamePlayersConsumer(WebsocketConsumer):
                  "message": data["message"],
                  "success": True}
             )
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_gameroom", {
+                    "type": "status.update",
+                    "subtype": "send_game_message",
+                    "message": f"{char_id} has moved to {move_location}"
+                }
+            )
+            # Move the player on the game board
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_gameroom", {"type": "status.update", 
+                                       "subtype": "character_locations",
+                                       "char_loc_icons": data["char_loc_icons"]}
+            )
+
         elif response.status_code == 400:
             data = response.json()
             async_to_sync(self.channel_layer.group_send)(
@@ -242,6 +334,32 @@ class GamePlayersConsumer(WebsocketConsumer):
                 {"type": "status.update", 
                  "message": data["message"],
                  "success": False}
+            )
+
+    def turn_handoff(self, event):
+        """
+        Handle the handoff of turns between players
+        message from websocket:             
+        'message': "End Turn",
+            'subtype': 'end_turn',
+            'char_id': charID
+        """
+        char_id = event["char_id"]
+        response = requests.post(f"http://localhost:8000/{reverse('clueless:turn_handler')}", 
+                                 json={
+                                        "current_turn": char_id,
+                                    })
+        if response.status_code == 200:
+            data = response.json()
+            current_turn = data["current_turn"]
+            # Unlock the turn for the next player
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_{current_turn}_session", {"type": "unlock.turn", "message": data["message"]}
+            )
+            # Notify all players of the next player
+            async_to_sync(self.channel_layer.group_send)(
+                f"gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message",
+                                        "message":  data["message"]}
             )
 
 class PlayerNotificationConsumer(WebsocketConsumer):
@@ -254,7 +372,7 @@ class PlayerNotificationConsumer(WebsocketConsumer):
         )
         self.accept()
         self.send(text_data=json.dumps({"message": f"Welcome to the game room, {(char_id.replace('_', ' ')).title()}"}))
-        # Send a status request message to the game player consumer to show player cards and send a message to the player whose turn it is
+
         # for each room_group_name, send a message to the game player consumer to show player cards and send a message to the player whose turn it is
         self.player_init(char_id=char_id)
 
@@ -264,7 +382,7 @@ class PlayerNotificationConsumer(WebsocketConsumer):
         )
 
     def unlock_turn(self, event):
-        self.send(text_data=json.dumps({"message": "It is your turn", "unlock": "turn"}))
+        self.send(text_data=json.dumps({"message": "It is your turn", "unlock_turn": True}))
 
     def player_init(self, char_id):
         # get the player cards
@@ -273,14 +391,18 @@ class PlayerNotificationConsumer(WebsocketConsumer):
         if response.status_code == 200:
             data = response.json()
             card_selection = data["card_selection"][char_id]
-            self.send(text_data=json.dumps({"message": f"Your cards are: {card_selection}", 
-                                            "success": True,
-                                            "card_selection": card_selection}))
+            self.send(text_data=json.dumps({"message": f"Your cards are: {", ".join(card_selection)}. Click on the 'View Your Cards' button to see them at any time.", 
+                                            "success": True
+                                            }))
             current_turn = data["current_turn"] 
             if current_turn == char_id:
                 async_to_sync(self.channel_layer.group_send)(
                     f"gameroom_{current_turn}_session", {"type": "unlock.turn", "char_id": current_turn}
                 )
+            async_to_sync(self.channel_layer.group_send)(
+                "gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message", "message": f"{current_turn} is up next"}
+            )
+
 
     def status_update(self, event):
         success = event.get("success") or True
@@ -293,6 +415,5 @@ class PlayerNotificationConsumer(WebsocketConsumer):
             text_data.update({"actor": event["actor"]})
         self.send(text_data=json.dumps(text_data))
 
-    # def disprove_suggestion(self, event):
-    #     text_data = {"message": event["message"], "char_id": event["char_id"]}
-    #     self.send(text_data=json.dumps(text_data))
+    def accusation_fail(self, event):
+        self.send(text_data=json.dumps({"message": event["message"], "success": False, "accusation_fail": True}))
