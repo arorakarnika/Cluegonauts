@@ -21,19 +21,19 @@
                 {% for row in locations %}
                     {% for location in row %}
                         {% if location.location_id in blank_ids %}
-                            <div id="{{ location.location_id }}_card" class="card py-20 rounded-lg shadow-lg opacity-50 w-auto" role="button">
+                            <div id="{{ location.location_id }}_card" class="card py-20 rounded-lg opacity-50 w-auto">
                                 <div class="card-body" id="{{ location.location_id }}">
                                     <h2 class="card-title">{{ location.name }}</h2>
                                 </div>
                             </div>
                         {% elif location.location_id in hallway_ids  %}
-                            <div id="{{ location.location_id }}_card" class="card py-20 rounded-lg shadow-lg bg-gray-500 opacity-55 w-auto" role="button">
+                            <div id="{{ location.location_id }}_card" class="card py-20 rounded-lg bg-gray-500 opacity-55 w-auto inline items-center" role="button">
                                 <div class="card-body" id="{{ location.location_id }}">
                                     <h2 class="card-title">{{ location.name }}</h2>
                                 </div>
                             </div>
                         {% else %}
-                            <div id="{{ location.location_id }}_card" class="card py-20 rounded-lg shadow-lg bg-blue-500 opacity-55 w-auto" role="button">
+                            <div id="{{ location.location_id }}_card" class="card py-20 rounded-lg bg-blue-500 opacity-55 w-auto inline items-center" role="button">
                                 <div class="card-body" id="{{ location.location_id }}">
                                     <h2 class="card-title">{{ location.name }}</h2>
                                 </div>

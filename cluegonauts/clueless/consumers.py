@@ -95,16 +95,6 @@ class GamePlayersConsumer(WebsocketConsumer):
             case "character_locations":
                 self.send(text_data=json.dumps({"message": "character_locations", "char_loc_icons": event["char_loc_icons"]}))
 
-    def status_request(self, event):
-        if "send_to" in event and event["send_to"] != "gameplayer":
-            return
-        event_message = event["message"]
-        if event_message == "session_id":
-            session_id = self.scope["session"].get("game_session", None)
-            async_to_sync(self.channel_layer.group_send)(
-                self.room_group_name, {"type": "status.update", "subtype": "session_id", "message": session_id,
-                                       "send_to": event["reply_to"]}
-            )
 
     def select_player(self, event):
         if "game_session" not in self.scope["session"]:
@@ -138,16 +128,6 @@ class GamePlayersConsumer(WebsocketConsumer):
                     {"type": "status.update", "subtype": "unlock_start"}
                 )
 
-    def status_request(self, event):
-        if "send_to" in event and event["send_to"] != "gamestate":
-            return
-        match event["message"]:
-            case "session_id":
-                session_id = self.scope["session"].get("game_session", None)
-                async_to_sync(self.channel_layer.group_send)(
-                    self.room_group_name, {"type": "status.update", "subtype": "session_id" ,"message": session_id,
-                                           "send_to": event["reply_to"]}
-                )
     def setup_game(self):
         """
         This is called when someone clicks the start game button
