@@ -11,7 +11,6 @@ import asyncio
 
 class GamePlayersConsumer(WebsocketConsumer):
     def connect(self):
-        print("connecting")
         self.room_name = "gameroom"
         self.room_group_name = f"gameroom_{self.room_name}"
         async_to_sync(self.channel_layer.group_add)(
@@ -280,8 +279,6 @@ class GamePlayersConsumer(WebsocketConsumer):
                 )
 
     def handle_message(self,event):
-        print("inside handle a message")
-        print(event)
         # Notify all players with group message
         async_to_sync(self.channel_layer.group_send)(
             f"gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message",
