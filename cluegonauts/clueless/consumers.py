@@ -28,7 +28,6 @@ class GamePlayersConsumer(WebsocketConsumer):
         """
         Receive a message from the websocket and process it
         """
-        print("entering receive method")
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
         print(message)
