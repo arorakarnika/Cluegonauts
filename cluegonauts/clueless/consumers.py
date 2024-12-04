@@ -1,15 +1,14 @@
 import json
-import threading
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
-from channels.layers import get_channel_layer
-import uuid
 import requests
 from django.urls import reverse
-from .utils import connect_game_state_consumer
-import asyncio
+from clueless.utils import char_id_to_name, location_id_to_name
+
 
 class GamePlayersConsumer(WebsocketConsumer):
+    last_turn_notification = ""
+
     def connect(self):
         self.room_name = "gameroom"
         self.room_group_name = f"gameroom_{self.room_name}"
@@ -49,13 +48,14 @@ class GamePlayersConsumer(WebsocketConsumer):
         elif text_data_json["subtype"] == "player_suggestion":
             self.handle_suggestion(text_data_json)
         elif text_data_json["subtype"] == "disprove_suggestion":
+            char_name = char_id_to_name(text_data_json["char_id"])
             async_to_sync(self.channel_layer.group_send)(
                     f"gameroom_{text_data_json['data']['actor']}_session", 
                     {"type": "status.update", 
-                     "message": f'{text_data_json["char_id"]} showed you a card: {text_data_json["data"]["card"]}', 
+                     "message": f'{char_name} showed you a card: {text_data_json["data"]["card"]}',
                      "success": True}
                 )
-            self.send(text_data=json.dumps({"message": f"{text_data_json['char_id']} disproved the suggestion"}))
+            self.send(text_data=json.dumps({"message": f"{char_name} disproved the suggestion"}))
 
         elif text_data_json["subtype"] == "player_accusation":
             self.handle_accusation(text_data_json)
@@ -73,8 +73,6 @@ class GamePlayersConsumer(WebsocketConsumer):
         """
         Receive a status update from another consumer and process it
         """
-        if "send_to" in event and event["send_to"] != "gameplayer":
-            return
         match event["subtype"]:
             case "select_player":
                 self.select_player(event)
@@ -94,6 +92,11 @@ class GamePlayersConsumer(WebsocketConsumer):
                 self.send(text_data=json.dumps({"message": "redirect_game"}))
             case "send_game_message":
                 self.send(text_data=json.dumps({"message": event["message"]}))
+            case "turn_notification":
+                current_turn = event["char_id"]
+                if current_turn != self.last_turn_notification:
+                    self.last_turn_notification = current_turn
+                    self.send(text_data=json.dumps({"message": event["message"]}))
             case "game_over":
                 self.send(text_data=json.dumps({"message": "game_over", "message_text": event["message"], "winner": event["actor"]}))
             case "character_locations":
@@ -150,6 +153,7 @@ class GamePlayersConsumer(WebsocketConsumer):
                                        "current_turn": current_turn,
                                        "card_selection": card_selection}
             )
+
     def get_char_locations(self):
         """
         Called to get the character locations to display on the game board
@@ -295,7 +299,9 @@ class GamePlayersConsumer(WebsocketConsumer):
         player_move_url = reverse("clueless:player_move")
         response = requests.post(f"http://localhost:8000/{player_move_url}", json={"location_id": move_location,
                                                                                      "char_id": char_id})
-        
+        char_name = char_id_to_name(char_id)
+        location_name = location_id_to_name(move_location)
+
         if response.status_code == 200:
             data = response.json()
             print(data)
@@ -309,7 +315,7 @@ class GamePlayersConsumer(WebsocketConsumer):
                 f"gameroom_gameroom", {
                     "type": "status.update",
                     "subtype": "send_game_message",
-                    "message": f"{char_id} has moved to {move_location}"
+                    "message": f"{char_name} has moved to {location_name}"
                 }
             )
             # Move the player on the game board
@@ -325,7 +331,9 @@ class GamePlayersConsumer(WebsocketConsumer):
                 f"gameroom_{char_id}_session", 
                 {"type": "status.update", 
                  "message": data["message"],
-                 "success": False}
+                 "success": False,
+                 "move_fail": True,
+                 "valid_locations": data["valid_locations"]}
             )
 
     def turn_handoff(self, event):
@@ -363,7 +371,10 @@ class PlayerNotificationConsumer(WebsocketConsumer):
             self.room_group_name, self.channel_name
         )
         self.accept()
-        self.send(text_data=json.dumps({"message": f"Welcome to the game room, {(char_id.replace('_', ' ')).title()}"}))
+        char_name = char_id_to_name(char_id)
+        self.send(text_data=json.dumps({"message": f"Welcome to the game room, {char_name}",
+                                        "char_name": char_name,
+                                        "welcome_message": True}))
 
         # for each room_group_name, send a message to the game player consumer to show player cards and send a message to the player whose turn it is
         self.player_init(char_id=char_id)
@@ -386,13 +397,15 @@ class PlayerNotificationConsumer(WebsocketConsumer):
             self.send(text_data=json.dumps({"message": f"Your cards are: {", ".join(card_selection)}. Click on the 'View Your Cards' button to see them at any time.", 
                                             "success": True
                                             }))
-            current_turn = data["current_turn"] 
+            current_turn = data["current_turn"]
             if current_turn == char_id:
                 async_to_sync(self.channel_layer.group_send)(
                     f"gameroom_{current_turn}_session", {"type": "unlock.turn", "char_id": current_turn}
                 )
+            current_turn_name = char_id_to_name(data["current_turn"])
             async_to_sync(self.channel_layer.group_send)(
-                "gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message", "message": f"{current_turn} is up next"}
+                "gameroom_gameroom", {"type": "status.update", "subtype": "turn_notification", "message": f"{current_turn_name} is up next",
+                                      "char_id":current_turn}
             )
 
 
@@ -405,6 +418,9 @@ class PlayerNotificationConsumer(WebsocketConsumer):
             text_data.update({"char_id": event["char_id"]})
         if event.get("actor"):
             text_data.update({"actor": event["actor"]})
+        if event.get("move_fail"):
+            text_data.update({"move_fail": event["move_fail"],
+                              "valid_locations": event["valid_locations"]})
         self.send(text_data=json.dumps(text_data))
 
     def accusation_fail(self, event):
