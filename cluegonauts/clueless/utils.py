@@ -1,6 +1,14 @@
 from .models import GameSession
 from .classes import CharacterHandler
-import websocket
+
+
+CHAR_ID_TO_NAME_DICT = {"ms_scarlet": "Miss Scarlet",
+                        "prof_plum": "Professor Plum",
+                        "mrs_peacock": "Mrs. Peacock",
+                        "mr_green": "Mr. Green",
+                        "mrs_white": "Mrs. White",
+                        "col_mustard": "Colonel Mustard"}
+
 
 def select_character(char_id: str, char_handler:CharacterHandler, game_session: GameSession, session_id: str = None) -> bool:
     """
@@ -19,6 +27,9 @@ def select_character(char_id: str, char_handler:CharacterHandler, game_session: 
     elif not char_handler.is_available(char_id):
         return False, session_id
 
-def connect_game_state_consumer():
-    game_state_consumer_socket = websocket.WebSocketApp('ws://localhost:8000/ws/clueless/gamestate/')
-    game_state_consumer_socket.run_forever()
+
+def char_id_to_name(char_id: str):
+    return CHAR_ID_TO_NAME_DICT[char_id]
+
+def location_id_to_name(location_id: str):
+    return location_id.replace("_", " ").title()
