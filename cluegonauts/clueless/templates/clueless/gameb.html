@@ -60,37 +60,40 @@
         </div>
       </div>
     </div>
-  
+
     <!-- Need pointer-events:none to prevent invisible sidebar overlay from preventing click-through -->
-    <div id="drawer-overlay" class="drawer-side" style="pointer-events: none;"> 
+    <div id="drawer-overlay" class="drawer-side" style="pointer-events: none;">
       <!-- Need pointer-events:auto to override pointer-events:none and allow sidebar clicks -->
       <div id="notebook-list" class="menu bg-base-200 text-base-content min-h-full w-min p-4" style="pointer-events: auto;">
         <button onclick="toggleNotebook()" class="btn btn-primary"><a>Close Notebook</a></button>
         <h2><strong>Characters</strong></h2>
         <ul>
           {% for character in characters %}
-            <li><span>
-              <input type="checkbox" id="{{ character.id }}">
-              <label for="{{ character.id }}">{{ character.name }}</label>
-            </span></li>
+            <li>
+              <label class="checkbox-inline">
+                <input type="checkbox">{{ character.name }}
+              </label>
+            </li>
           {% endfor %}
         </ul>
         <h2><strong>Weapons</strong></h2>
         <ul>
           {% for weapon in weapons %}
-            <li><span>
-              <input type="checkbox" id="{{ weapon.id }}">
-              <label for="{{ weapon.id }}">{{ weapon.name }}</label>
-            </span></li>
+            <li>
+              <label class="checkbox-inline">
+                <input type="checkbox">{{ weapon.name }}
+              </label>
+            </li>
           {% endfor %}
         </ul>
         <h2><strong>Locations</strong></h2>
         <ul>
           {% for room in rooms %}
-            <li><span>
-              <input type="checkbox" id="{{ room.id }}">
-              <label for="{{ room.id }}">{{ room.name }}</label>
-            </span></li>
+            <li>
+              <label class="checkbox-inline">
+                <input type="checkbox">{{ room.name }}
+              </label>
+            </li>
           {% endfor %}
         </ul>
       </div>
@@ -214,7 +217,7 @@
         boardContainer.style.height = emptyHeight + "px";
         const playerLog = document.getElementById("player-log");
         playerLog.style.height = emptyHeight + "px";
-        
+
         let controlContainer = document.getElementById("control-container");
         let windowWidth = window.innerWidth;
         if (document.getElementById("detective-notebook").checked) {
@@ -243,17 +246,17 @@
     
     window.onload = resizeBoard;
     window.onresize = resizeBoard;
-    
+
     // toggles detective notebook and resizes
-    
+
     function toggleNotebook() {
         let notebook = document.getElementById("detective-notebook"); // get invisible toggle
         notebook.checked = !notebook.checked; // adjust toggle
         resizeBoard();
     }
-    
+
     // disables all invalid locations
-    
+
     function disableInvalidMoves(valid_moves) {
         disabledLocations = true;
         // loop through all location elements
@@ -280,7 +283,7 @@
     }
 
     // reverts disableInvalidMoves changes
-    
+
     function enableAllMoves() {
         const boardContainer = document.getElementById("game-board");
         // loop through all location elements
