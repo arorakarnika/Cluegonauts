@@ -32,6 +32,9 @@ def gameb(request, char_id, loc_handler: LocationHandler, card_handler: CardHand
     request.session["char_id"] = char_id
     session_id = request.session.get("game_session", None)
     locations = loc_handler.locations
+    rooms = card_handler.location_card
+    characters = card_handler.character_card
+    weapons = card_handler.weapon_card
     blank_ids = ['blank_1', 'blank_2', "blank_3", "blank_4"]
     hallway_ids = [location.location_id for row in locations for location in row if location.name.startswith("Hallway")]
     form = SuggestAccuseForm()
@@ -45,6 +48,9 @@ def gameb(request, char_id, loc_handler: LocationHandler, card_handler: CardHand
     return render(request, "clueless/gameb.html", 
                   {"char_id": char_id,
                    "locations": locations,
+                   "characters": characters,
+                   "weapons": weapons,
+                   "rooms": rooms,
                    "blank_ids": blank_ids,
                    "hallway_ids": hallway_ids,
                    "player_action_form": form,
@@ -163,7 +169,9 @@ class PlayerMove(APIView):
         if current_location.location_id == location_id:
             return Response({"message": "Player is already in this location"}, status=status.HTTP_400_BAD_REQUEST)
         elif location_id not in current_location.connected_location and location_id != current_location.secret_passage_to:
-                return Response({"message": f"Invalid move from {current_location.name} to {location_id}, your choices are {current_location.connected_location} "}, status=status.HTTP_400_BAD_REQUEST)
+                connected_location_names = [self.loc_handler.get_location_by_id(connected_id).name for connected_id in current_location.connected_location]
+                return Response({"message": f"Invalid move from {current_location.name} to {self.loc_handler.get_location_by_id(location_id).name}, your choices are {connected_location_names} ",
+                                 "valid_locations": [connected_id for connected_id in current_location.connected_location]}, status=status.HTTP_400_BAD_REQUEST)
         elif self.loc_handler.get_location_by_id(location_id).is_occupied:
             return Response({"message": "Location is occupied"}, status=status.HTTP_400_BAD_REQUEST)
         else:
