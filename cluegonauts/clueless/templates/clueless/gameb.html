@@ -47,14 +47,16 @@
           </div>
         </div>
         <div class="col-autocol-span-1">
-          <div id="player-log" class="container mx-auto overflow-auto">
+          <div id="player-log-header">
             <div id="selected-character" class="label">
-              <span class="text"> Selected Character: </span>
-              <span id="selected-character-name" class="text"> </span>
-            </div>
-            <div class="label">
-              <span class="text-xl"> Game Log </span>
-            </div>
+                <span class="text"> Selected Character: </span>
+                <span id="selected-character-name" class="text"> </span>
+              </div>
+              <div class="label">
+                <span class="text-xl"> Game Log </span>
+              </div>
+          </div>
+          <div id="player-log" class="container mx-auto overflow-auto">
             <!-- Render game log messages from javascript -->
           </div>
         </div>
@@ -211,11 +213,10 @@
         let emptyHeight = window.innerHeight;
         emptyHeight -= document.getElementById("navbar").clientHeight;
         emptyHeight -= document.getElementById("end-turn").clientHeight;
-        emptyHeight -= document.getElementById("board-prompt").clientHeight;
         const boardContainer = document.getElementById("game-board");
-        boardContainer.style.height = emptyHeight + "px";
+        boardContainer.style.height = (emptyHeight - document.getElementById("board-prompt").clientHeight) + "px";
         const playerLog = document.getElementById("player-log");
-        playerLog.style.height = emptyHeight + "px";
+        playerLog.style.height = (emptyHeight - document.getElementById("player-log-header").clientHeight) + "px";
 
         let controlContainer = document.getElementById("control-container");
         let windowWidth = window.innerWidth;
