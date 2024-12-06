@@ -123,39 +123,39 @@ class LocationHandler:
             self.locations = [locations]
         self.locations = [
             [
-                Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen", image= "kitchen_gb.png"), 
-                Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"]), 
-                Location(location_id="hall", name="Hall", connected_location=["hallway_2", "hallway_4", "hallway_1"], image="hall_gb.png"), 
-                Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"]), 
-                Location(location_id="lounge", name="Lounge", connected_location=["hallway_5", "hallway_2"], has_secret_passage=True, secret_passage_to="conservatory", image="lounge_gb.png")
+                Location(location_id="study", name="Study", connected_location=["hallway_1", "hallway_3"], has_secret_passage=True, secret_passage_to="kitchen", image= "study_gv.png"), 
+                Location(location_id="hallway_1", name="Hallway 1", connected_location=["study", "hall"], image= "hallway_vertical_gv.png"), 
+                Location(location_id="hall", name="Hall", connected_location=["hallway_2", "hallway_4", "hallway_1"], image="hall_gv.png"), 
+                Location(location_id="hallway_2", name="Hallway 2", connected_location=["hall", "lounge"], image= "hallway_vertical_gv.png"), 
+                Location(location_id="lounge", name="Lounge", connected_location=["hallway_5", "hallway_2"], has_secret_passage=True, secret_passage_to="conservatory", image="lounge_gv.png")
             ],
             [
-                Location(location_id="hallway_3", name="Hallway 3", connected_location=["study", "library"]),
+                Location(location_id="hallway_3", name="Hallway 3", connected_location=["study", "library"], image= "hallway_horizontal_gv.png"),
                 Location(location_id="blank_1", name="Blank 1", connected_location=["hallway_1", "hallway_6"]), 
-                Location(location_id="hallway_4", name="Hallway 4", connected_location=["hall", "billiard_room"]), 
+                Location(location_id="hallway_4", name="Hallway 4", connected_location=["hall", "billiard_room"], image= "hallway_horizontal_gv.png"), 
                 Location(location_id="blank_2", name="Blank 2", connected_location=["hallway_2", "hallway_7"]), 
-                Location(location_id="hallway_5", name="Hallway 5", connected_location=["lounge", "dining_room"])
+                Location(location_id="hallway_5", name="Hallway 5", connected_location=["lounge", "dining_room"], image= "hallway_horizontal_gv.png")
             ],
             [
-                Location(location_id="library", name="Library", connected_location=["hallway_3", "hallway_6", "hallway_8"], image= "library_gb.png"), 
-                Location(location_id="hallway_6", name="Hallway 6", connected_location=["library", "billiard_room"]), 
-                Location(location_id="billiard_room", name="Billiard Room", connected_location=["hallway_4", "hallway_7", "hallway_9", "hallway_6"], image= "billiard_room_gb.png"), 
-                Location(location_id="hallway_7", name="Hallway 7", connected_location=["billiard_room", "dining_room"]), 
-                Location(location_id="dining_room", name="Dining Room", connected_location=["hallway_5", "hallway_10", "hallway_7"], image= "dining_room_gb.png")
+                Location(location_id="library", name="Library", connected_location=["hallway_3", "hallway_6", "hallway_8"], image= "library_gv.png"), 
+                Location(location_id="hallway_6", name="Hallway 6", connected_location=["library", "billiard_room"], image= "hallway_vertical_gv.png"), 
+                Location(location_id="billiard_room", name="Billiard Room", connected_location=["hallway_4", "hallway_7", "hallway_9", "hallway_6"], image= "billiard_room_gv.png"), 
+                Location(location_id="hallway_7", name="Hallway 7", connected_location=["billiard_room", "dining_room"], image= "hallway_vertical_gv.png"), 
+                Location(location_id="dining_room", name="Dining Room", connected_location=["hallway_5", "hallway_10", "hallway_7"], image= "dining_room_gv.png")
             ],
             [ 
-                Location(location_id="hallway_8", name="Hallway 8", connected_location=["library", "conservatory"]), 
+                Location(location_id="hallway_8", name="Hallway 8", connected_location=["library", "conservatory"], image= "hallway_horizontal_gv.png"), 
                 Location(location_id="blank_3", name="Blank 3", connected_location=["hallway_6", "hallway_8"]), 
-                Location(location_id="hallway_9", name="Hallway 9", connected_location=["billiard_room", "ballroom"]), 
+                Location(location_id="hallway_9", name="Hallway 9", connected_location=["billiard_room", "ballroom"], image= "hallway_horizontal_gv.png"), 
                 Location(location_id="blank_4", name="Blank 4", connected_location=["hallway_7", "hallway_12"]), 
-                Location(location_id="hallway_10", name="Hallway 10", connected_location=["dining_room", "kitchen"])
+                Location(location_id="hallway_10", name="Hallway 10", connected_location=["dining_room", "kitchen"], image= "hallway_horizontal_gv.png")
             ],
             [
-                Location(location_id="conservatory", name="Conservatory", connected_location=["hallway_8", "hallway_11"], has_secret_passage=True, secret_passage_to="lounge", image="conservatory_gb.png"), 
-                Location(location_id="hallway_11", name="Hallway 11", connected_location=["conservatory", "ballroom"]), 
-                Location(location_id="ballroom", name="Ballroom", connected_location=["hallway_9", "hallway_12", "hallway_11"], image="ballroom_gbv2.png"), 
-                Location(location_id="hallway_12", name="Hallway 12", connected_location=["ballroom", "kitchen"]), 
-                Location(location_id="kitchen", name="Kitchen", connected_location=["hallway_10", "hallway_12"], has_secret_passage=True, secret_passage_to="study", image="kitchen_gb.png")
+                Location(location_id="conservatory", name="Conservatory", connected_location=["hallway_8", "hallway_11"], has_secret_passage=True, secret_passage_to="lounge", image="conservatory_gv.png"), 
+                Location(location_id="hallway_11", name="Hallway 11", connected_location=["conservatory", "ballroom"], image= "hallway_vertical_gv.png"), 
+                Location(location_id="ballroom", name="Ballroom", connected_location=["hallway_9", "hallway_12", "hallway_11"], image="ballroom_gv.png"), 
+                Location(location_id="hallway_12", name="Hallway 12", connected_location=["ballroom", "kitchen"], image= "hallway_vertical_gv.png"), 
+                Location(location_id="kitchen", name="Kitchen", connected_location=["hallway_10", "hallway_12"], has_secret_passage=True, secret_passage_to="study", image="kitchen_gv.png")
             ]
         ]
 
