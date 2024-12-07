@@ -27,7 +27,7 @@
                                 </div>
                             </div>
                         {% elif location.location_id in hallway_ids %}
-                            <div id="{{ location.location_id }}_card" class="card image-full opacity-50 rounded-lg w-auto inline items-center" role="button">
+                            <div id="{{ location.location_id }}_card" class="card image-full opacity-50 w-auto inline items-center" role="button">
                                 <figure>
                                     {% if location.image %}
                                         <img src="{% static 'clueless/images/'|add:location.image %}"
