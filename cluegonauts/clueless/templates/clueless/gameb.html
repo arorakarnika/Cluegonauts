@@ -27,25 +27,30 @@
                                 </div>
                             </div>
                         {% elif location.location_id in hallway_ids %}
-                            <div id="{{ location.location_id }}_card" class="card py-20 rounded-lg w-auto inline items-center" role="button">
-                                <div class="card-body" id="{{ location.location_id }}">
+                            <div id="{{ location.location_id }}_card" class="card image-full opacity-50 rounded-lg w-auto inline items-center" role="button">
+                                <figure>
                                     {% if location.image %}
-                                        <img src="{% static 'clueless/images/'|add:location.image %}" 
-                                             alt="{{ location.name }}" 
+                                        <img src="{% static 'clueless/images/'|add:location.image %}"
+                                             alt="{{ location.name }}"
                                              class="location-image w-full h-full object-cover rounded-lg">
                                     {% endif %}
-                                    <h2 class="card-title">{{ location.name }}</h2>
+                                </figure>
+                                <div class="card-body" id="{{ location.location_id }}">
+
+                                    <h2 class="card-title text-black opacity-95">{{ location.name }}</h2>
                                 </div>
                             </div>
                         {% else %}
-                            <div id="{{ location.location_id }}_card" class="card py-20 rounded-lg bg-blue-500 opacity-55 w-auto inline items-center" role="button">
-                                <div class="card-body" id="{{ location.location_id }}">
+                            <div id="{{ location.location_id }}_card" class="card image-full opacity-50 w-auto inline items-center" role="button">
+                                <figure>
                                     {% if location.image %}
-                                        <img src="{% static 'clueless/images/'|add:location.image %}" 
-                                                alt="{{ location.name }}" 
+                                        <img src="{% static 'clueless/images/'|add:location.image %}"
+                                                alt="{{ location.name }}"
                                                 class="location-image w-full h-full object-cover rounded-lg">
                                     {% endif %}
-                                    <h2 class="card-title">{{ location.name }}</h2>
+                                </figure>
+                                <div class="card-body" id="{{ location.location_id }}">
+                                    <h2 class="card-title text-black">{{ location.name }}</h2>
                                 </div>
                             </div>
                         {% endif %}
