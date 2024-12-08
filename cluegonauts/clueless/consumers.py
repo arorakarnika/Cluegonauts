@@ -29,6 +29,7 @@ class GamePlayersConsumer(WebsocketConsumer):
         """
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
+        print(message)
         char_id  = text_data_json.get("char_selected", None)
         session_id = self.scope["session"].get("game_session", None)
 
@@ -58,6 +59,9 @@ class GamePlayersConsumer(WebsocketConsumer):
 
         elif text_data_json["subtype"] == "player_accusation":
             self.handle_accusation(text_data_json)
+
+        elif text_data_json["subtype"] == "send_message":
+            self.handle_message(text_data_json)
 
         elif text_data_json["subtype"] == "character_locations":
             self.get_char_locations()
@@ -277,6 +281,13 @@ class GamePlayersConsumer(WebsocketConsumer):
                                                   "success": success}
                 )
 
+    def handle_message(self,event):
+        # Notify all players with group message
+        async_to_sync(self.channel_layer.group_send)(
+            f"gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message",
+                                    "message":  event["message"]}
+                                    )
+
 
     def player_move(self, event):
         """
@@ -293,6 +304,7 @@ class GamePlayersConsumer(WebsocketConsumer):
 
         if response.status_code == 200:
             data = response.json()
+            print(data)
             async_to_sync(self.channel_layer.group_send)(
                 f"gameroom_{char_id}_session", 
                 {"type": "status.update", 
