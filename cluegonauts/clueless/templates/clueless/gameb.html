@@ -26,19 +26,19 @@
                 {% if location.location_id in blank_ids %}
                   <div id="{{ location.location_id }}_card" class="card rounded-lg opacity-50 ">
                     <div class="card-body" id="{{ location.location_id }}">
-                      <h2 class="card-title">{{ location.name }}</h2>
+                      <h2 class="card-title" id="{{ location.location_id }}_title">{{ location.name }}</h2>
                     </div>
                   </div>
                 {% elif location.location_id in hallway_ids  %}
                   <div id="{{ location.location_id }}_card" class="card rounded-lg bg-gray-500 opacity-55 inline items-center" role="button">
                     <div class="card-body" id="{{ location.location_id }}">
-                      <h2 class="card-title">{{ location.name }}</h2>
+                      <h2 class="card-title" id="{{ location.location_id }}_title">{{ location.name }}</h2>
                     </div>
                   </div>
                 {% else %}
                   <div id="{{ location.location_id }}_card" class="card rounded-lg bg-blue-500 opacity-55 inline items-center" role="button">
                     <div class="card-body" id="{{ location.location_id }}">
-                      <h2 class="card-title">{{ location.name }}</h2>
+                      <h2 class="card-title" id="{{ location.location_id }}_title">{{ location.name }}</h2>
                     </div>
                   </div>
                 {% endif %}
@@ -199,12 +199,12 @@
 
     // Get player locations once page is loaded
 
-    window.onload = function() {
+    activitySocket.addEventListener("open", (event) => {
         activitySocket.send(JSON.stringify({
             'message': "Get player locations",
             'subtype': 'character_locations',
         }));
-    };
+    });
     
     // Resize game board and player log
     
@@ -380,6 +380,8 @@
         // if clicked on card, get child element
         if (e.target.id.includes('_card')) {
             location = e.target.children[0].id;
+        } else if (e.target.id.includes('_title')) {
+            location = e.target.parentElement.id;
         }
         // get char id from url path
         const charID = window.location.href.split('/').pop();
