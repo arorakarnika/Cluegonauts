@@ -5,11 +5,14 @@
 {% block content %}
 
 <!-- Main Content -->
-    <div class="container mx-auto">
-        <button class="btn btn-primary" onclick="player_suggestion.showModal()">Make a Suggestion</button>
-        <button id="accuse_button" class="btn btn-primary" onclick="player_accusation.showModal()">Make an Accusation</button>
-        <button class="btn btn-primary" onclick="card_carousel.showModal()">View Your Cards</button>
-        <button class="btn btn-primary" id="end-turn" class="btn btn-error" disabled>End Turn</button>
+  <div class="drawer drawer-end">
+    <input id="detective-notebook" type="checkbox" class="drawer-toggle" />
+    <div id="control-container" class="container mx-auto drawer-content">
+      <button class="btn btn-primary" onclick="player_suggestion.showModal()">Make a Suggestion</button>
+      <button id="accuse_button" class="btn btn-primary" onclick="player_accusation.showModal()">Make an Accusation</button>
+      <button class="btn btn-primary" onclick="card_carousel.showModal()">View Your Cards</button>
+      <button onclick="toggleNotebook()" class="btn btn-primary">Toggle Detective Notebook</button>
+      <button class="btn btn-primary" id="end-turn" class="btn btn-error" disabled>End Turn</button>
       <div class="grid grid-cols-3">
           <div class="col-auto col-span-2">
               <div class="label">
@@ -69,6 +72,45 @@
             </div>
           </div>
       </div>
+    </div>
+
+    <!-- Need pointer-events:none to prevent invisible sidebar overlay from preventing click-through -->
+    <div id="drawer-overlay" class="drawer-side" style="pointer-events: none;">
+      <!-- Need pointer-events:auto to override pointer-events:none and allow sidebar clicks -->
+      <div id="notebook-list" class="menu bg-base-200 text-base-content min-h-full w-min p-4" style="pointer-events: auto;">
+        <button onclick="toggleNotebook()" class="btn btn-primary"><a>Close Notebook</a></button>
+        <h2><strong>Characters</strong></h2>
+        <ul>
+          {% for character in characters %}
+            <li>
+              <label class="checkbox-inline">
+                <input type="checkbox">{{ character.name }}
+              </label>
+            </li>
+          {% endfor %}
+        </ul>
+        <h2><strong>Weapons</strong></h2>
+        <ul>
+          {% for weapon in weapons %}
+            <li>
+              <label class="checkbox-inline">
+                <input type="checkbox">{{ weapon.name }}
+              </label>
+            </li>
+          {% endfor %}
+        </ul>
+        <h2><strong>Locations</strong></h2>
+        <ul>
+          {% for room in rooms %}
+            <li>
+              <label class="checkbox-inline">
+                <input type="checkbox">{{ room.name }}
+              </label>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
   </div>
 
   <!-- Player suggestion modal -->
@@ -136,6 +178,8 @@
   {% block script %}
 
 <script>
+    // track if locations disabled; only run re-enable loop if needed
+    let disabledLocations = false;
 
     // Game Session Websocket
     const activitySocket = new WebSocket(
@@ -160,16 +204,120 @@
         // Disable "End Turn" button
         const endTurnButton = document.querySelector('#end-turn');
         endTurnButton.disabled = true;
+
+        // Re-enable all location buttons
+        enableAllMoves();
     };
 
     // Get player locations once page is loaded
 
-    window.onload = function() {
+    activitySocket.addEventListener("open", (event) => {
         activitySocket.send(JSON.stringify({
             'message': "Get player locations",
             'subtype': 'character_locations',
         }));
-    };
+    });
+
+    // Resize game board and player log
+
+    function resizeBoard() {
+        // set gameboard and chat log heights
+        let emptyHeight = window.innerHeight;
+        emptyHeight -= document.getElementById("navbar").clientHeight;
+        emptyHeight -= document.getElementById("end-turn").clientHeight;
+        const boardContainer = document.getElementById("game-board");
+        boardContainer.style.height = (emptyHeight - document.getElementById("board-prompt").clientHeight) + "px";
+        const playerLog = document.getElementById("player-log");
+        playerLog.style.height = (emptyHeight - document.getElementById("player-log-header").clientHeight) + "px";
+
+        let controlContainer = document.getElementById("control-container");
+        let windowWidth = window.innerWidth;
+        if (document.getElementById("detective-notebook").checked) {
+            // adjust width if notebook is open
+            controlContainer.style.marginRight = document.getElementById("notebook-list").clientWidth + "px";
+            controlContainer.classList.add("pl-4");
+            windowWidth -= document.getElementById("notebook-list").clientWidth;
+            controlContainer.style.width = windowWidth + "px";
+        } else {
+            // remove adjustments if notebook is closed
+            controlContainer.style.marginRight = "";
+            controlContainer.classList.remove("pl-4");
+            controlContainer.style.width = windowWidth + "px";
+        }
+        // set gameboard and chat log widths
+        windowWidth = document.getElementById("control-container").clientWidth;
+        boardContainer.style.width = Math.trunc(windowWidth * .66) + "px"
+        playerLog.style.width = Math.trunc(windowWidth * .33) + "px";
+        let childElementWidth = Math.trunc((windowWidth * .66 - 80) / 5); // 80 is the fixed total padding per row
+        // set widths for each location
+        let boardContainerChildren = boardContainer.children;
+        for (let i = 0; i < boardContainerChildren.length; i++) {
+            boardContainerChildren[i].style.width = childElementWidth + "px";
+        }
+    }
+
+    window.onload = resizeBoard;
+    window.onresize = resizeBoard;
+
+    // toggles detective notebook and resizes
+
+    function toggleNotebook() {
+        let notebook = document.getElementById("detective-notebook"); // get invisible toggle
+        notebook.checked = !notebook.checked; // adjust toggle
+        resizeBoard();
+    }
+
+    // disables all invalid locations
+
+    function disableInvalidMoves(valid_moves) {
+        disabledLocations = true;
+        // loop through all location elements
+        const boardContainer = document.getElementById("game-board");
+        let boardContainerChildren = boardContainer.children;
+        for (let i = 0; i < boardContainerChildren.length; i++) {
+            if (valid_moves.includes(boardContainerChildren[i].id.replace("_card", ""))) {
+                // valid move; emphasize element
+                boardContainerChildren[i].style.borderWidth = "10px";
+                boardContainerChildren[i].style.borderColor = "yellow";
+                boardContainerChildren[i].classList.remove("opacity-55")
+                boardContainerChildren[i].classList.add("opacity-85")
+            } else {
+                // invalid move; disable and de-emphasize element and children
+                boardContainerChildren[i].disabled = true; // disable card
+                boardContainerChildren[i].classList.remove("opacity-55")
+                boardContainerChildren[i].classList.add("opacity-25")
+                let child_element = boardContainerChildren[i].children[0];
+                child_element.disabled = true; // disable card body
+                child_element = child_element.children[0];
+                child_element.disabled = true; // disable title
+            }
+        }
+    }
+
+    // reverts disableInvalidMoves changes
+
+    function enableAllMoves() {
+        const boardContainer = document.getElementById("game-board");
+        // loop through all location elements
+        let boardContainerChildren = boardContainer.children;
+        for (let i = 0; i < boardContainerChildren.length; i++) {
+            if (boardContainerChildren[i].disabled) {
+                boardContainerChildren[i].disabled = false; // enable card
+                let child_element = boardContainerChildren[i].children[0];
+                child_element.disabled = false; // enable card-body
+                child_element = child_element.children[0];
+                child_element.disabled = false; // enable title
+                boardContainerChildren[i].classList.remove("opacity-25")
+                boardContainerChildren[i].classList.add("opacity-55")
+            } else {
+                boardContainerChildren[i].classList.remove("opacity-85")
+                boardContainerChildren[i].classList.add("opacity-55")
+                boardContainerChildren[i].style.borderWidth = "";
+                boardContainerChildren[i].style.borderColor = "";
+            }
+        }
+        disabledLocations = false;
+    }
 
     // Log messages from the game session
 
@@ -216,7 +364,10 @@
                     console.error('Element with ID ' + charLocation + ' not found.');
                 }
 
-                
+                if (disabledLocations) {
+                    // re-enable all locations if player selects a valid move
+                    enableAllMoves();
+                }
                 
             };
 
@@ -232,10 +383,17 @@
 
     document.querySelector('#game-board').onclick = function(e) {
         console.log("Clicked " + e.target.id);
+
+        if (e.target.disabled) {
+            return;
+        }
+
         var location = e.target.id;
         // if clicked on card, get child element
         if (e.target.id.includes('_card')) {
             location = e.target.children[0].id;
+        } else if (e.target.id.includes('_title')) {
+            location = e.target.parentElement.id;
         }
         // get char id from url path
         const charID = window.location.href.split('/').pop();
@@ -291,6 +449,13 @@
             // Enable "End Turn" button
             const endTurnButton = document.querySelector('#end-turn');
             endTurnButton.disabled = false;
+        }
+        if ("move_fail" in data) {
+            disableInvalidMoves(data["valid_locations"]);
+        }
+        if ("welcome_message" in data) {
+            let characterLabel = document.getElementById("selected-character-name");
+            characterLabel.innerText = data["char_name"];
         }
     };
 
@@ -356,12 +521,12 @@
 
 <style>
     .location-image {
-        width: 100%; 
-        height: 100%; 
-        object-fit: cover; 
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
         border-radius: 8px;
     }
-    
+
     .card {
         display: flex;
         justify-content: center;
@@ -370,7 +535,7 @@
         position: relative;
         border-radius: 8px;
     }
-    
+
     .card-body {
         text-align: center;
         padding: 8px;

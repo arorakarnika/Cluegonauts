@@ -107,8 +107,9 @@
 
     document.querySelector('#start-game').onclick = function (e) {
         const selectedPlayer = document.querySelector('#player-select').value;
+        const selectedPlayerName = document.querySelector('#player-select option[value="' + selectedPlayer + '"]').text;
         activitySocket.send(JSON.stringify({
-            'message': selectedPlayer + ' has started the game.',
+            'message': selectedPlayerName + ' has started the game.',
             'char_selected': selectedPlayer,
             'subtype': 'start_game'
         }));
