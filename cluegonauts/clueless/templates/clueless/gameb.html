@@ -9,7 +9,6 @@
         <button class="btn btn-primary" onclick="player_suggestion.showModal()">Make a Suggestion</button>
         <button id="accuse_button" class="btn btn-primary" onclick="player_accusation.showModal()">Make an Accusation</button>
         <button class="btn btn-primary" onclick="card_carousel.showModal()">View Your Cards</button>
-        <button class="btn btn-primary" onclick="send_a_message.showModal()">Send a message</button>
         <button class="btn btn-primary" id="end-turn" class="btn btn-error" disabled>End Turn</button>
       <div class="grid grid-cols-3">
           <div class="col-auto col-span-2">
@@ -115,20 +114,6 @@
         </div>
 
     </dialog>
-
-     <!-- Send player message Modal -->
-     <dialog id="send_a_message" class="modal">
-        <div class="modal-box">
-        <h3 class="text-lg font-bold">Enter a message to send</h3>
-            <form id=messageForm method="dialog">
-                <input type="text" id="a_message" value="">
-                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-                <button class="btn btn-primary" onclick="processMessage()">Submit</button>
-            </form>
-        </div>
-
-    </dialog>
-
 
   {% endblock %}
   
