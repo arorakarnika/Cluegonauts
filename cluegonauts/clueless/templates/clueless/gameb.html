@@ -60,10 +60,8 @@
             <!-- Render game log messages from javascript -->
           </div>
           <div id="send-message">
-            <form id="message-form">
               <input type="text" id="a_message" placeholder="enter message" class="input input-bordered w-full max-w-xs" />
-             <!-- <button class="btn" onclick="processMessage()">Send</button> -->
-            </form>
+              <button class="btn" onclick="processMessage()">Send</button>
           </div>
         </div>
       </div>
@@ -318,6 +316,7 @@
 
     activitySocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
+        console.log(e);
         const playerLog = document.querySelector('#player-log');
         if (data.success === false) {
             playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble-error">' + data.message + '</div></div>';
@@ -368,9 +367,12 @@
 
             // for each char_id and location_id pair, add the character icon to the location, remove from previous location if different
             
+        } else if (data.message.charAt(0) === '[') {
+          playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble chat-bubble-secondary">' + data.message + '</div></div>';
         } else {
-            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
+          playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
         }
+
         playerLog.scrollTop = playerLog.scrollHeight;
     };
 
@@ -514,13 +516,13 @@
     // Handle sending a message to game log
     
     function processMessage() {
- //       const charID = window.location.href.split('/').pop();
- //       const messageToSend = charID + ': ' + document.getElementById("a_message").value;
-//        activitySocket.send(JSON.stringify({
-//                'message': messageToSend,
-//                'subtype': 'send_message'
-//        }));
-        document.getElementById('messageForm').reset();
+        const charID = window.location.href.split('/').pop();
+        const messageToSend = "[message from " + charID + ':] ' + document.getElementById("a_message").value;
+        activitySocket.send(JSON.stringify({
+                'message': messageToSend,
+                'subtype': 'send_message'
+        }));
+        document.getElementById("a_message").value = "";
     };
 
 </script>
