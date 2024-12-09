@@ -62,8 +62,7 @@
           <div id="send-message">
             <form id="message-form">
               <input type="text" id="a_message" placeholder="enter message" class="input input-bordered w-full max-w-xs" />
-              <button class="btn" onclick="processMessage()">Send</button>
-              <br>
+             <!-- <button class="btn" onclick="processMessage()">Send</button> -->
             </form>
           </div>
         </div>
@@ -515,14 +514,12 @@
     // Handle sending a message to game log
     
     function processMessage() {
-        const charID = window.location.href.split('/').pop();
-        const messageToSend = charID + ': ' + document.getElementById("a_message").value;
-        console.log(charID);
-        console.log(messageToSend);
-        activitySocket.send(JSON.stringify({
-                'message': messageToSend,
-                'subtype': 'send_message'
-        }));
+ //       const charID = window.location.href.split('/').pop();
+ //       const messageToSend = charID + ': ' + document.getElementById("a_message").value;
+//        activitySocket.send(JSON.stringify({
+//                'message': messageToSend,
+//                'subtype': 'send_message'
+//        }));
         document.getElementById('messageForm').reset();
     };
 
