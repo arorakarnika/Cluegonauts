@@ -14,52 +14,63 @@
       <button onclick="toggleNotebook()" class="btn btn-primary">Toggle Detective Notebook</button>
       <button class="btn btn-primary" id="end-turn" class="btn btn-error" disabled>End Turn</button>
       <div class="grid grid-cols-3">
-        <div id="board-container" class="col-auto col-span-2">
-          <div id="board-prompt" class="label">
-            <span class="text-xl">
-                Click on a location to move
-            </span>
-          </div>
-          <div id="game-board" class="grid grid-rows-5 grid-flow-col align-items gap-5 font-mono text-white text-sm text-center font-bold leading-6 rounded-lg">
-            {% for row in locations %}
-              {% for location in row %}
-                {% if location.location_id in blank_ids %}
-                  <div id="{{ location.location_id }}_card" class="card rounded-lg opacity-50 ">
-                    <div class="card-body" id="{{ location.location_id }}">
-                      <h2 class="card-title" id="{{ location.location_id }}_title">{{ location.name }}</h2>
-                    </div>
-                  </div>
-                {% elif location.location_id in hallway_ids  %}
-                  <div id="{{ location.location_id }}_card" class="card rounded-lg bg-gray-500 opacity-55 inline items-center" role="button">
-                    <div class="card-body" id="{{ location.location_id }}">
-                      <h2 class="card-title" id="{{ location.location_id }}_title">{{ location.name }}</h2>
-                    </div>
-                  </div>
-                {% else %}
-                  <div id="{{ location.location_id }}_card" class="card rounded-lg bg-blue-500 opacity-55 inline items-center" role="button">
-                    <div class="card-body" id="{{ location.location_id }}">
-                      <h2 class="card-title" id="{{ location.location_id }}_title">{{ location.name }}</h2>
-                    </div>
-                  </div>
-                {% endif %}
-              {% endfor %}
-            {% endfor %}
-          </div>
-        </div>
-        <div class="col-autocol-span-1">
-          <div id="player-log-header">
-            <div id="selected-character" class="label">
-                <span class="text"> Selected Character: </span>
-                <span id="selected-character-name" class="text"> </span>
+          <div class="col-auto col-span-2">
+              <div id="board-prompt" class="label">
+                  <span class="text-xl">
+                      Click on a location to move
+                  </span>
               </div>
-              <div class="label">
-                <span class="text-xl"> Game Log </span>
-              </div>
+              <div id="game-board" class="grid grid-rows-5 grid-flow-col gap-5 font-mono text-white text-sm text-center font-bold leading-6 rounded-lg">
+                {% for row in locations %}
+                    {% for location in row %}
+                        {% if location.location_id in blank_ids %}
+                            <div id="{{ location.location_id }}_card" class="card opacity-0 w-auto">
+                                <div class="card-body" id="{{ location.location_id }}">
+                                    <h2 class="card-title">{{ location.name }}</h2>
+                                </div>
+                            </div>
+                        {% elif location.location_id in hallway_ids %}
+                            <div class="card image-full w-auto inline items-center" role="button">
+                                <figure>
+                                    {% if location.image %}
+                                        <img id="{{ location.location_id }}_card" src="{% static 'clueless/images/'|add:location.image %}"
+                                             alt="{{ location.name }}"
+                                             class="location-image w-full h-full object-cover opacity-55 rounded-lg">
+                                    {% endif %}
+                                </figure>
+                                <div class="card-body" id="{{ location.location_id }}">
+
+                                    <h2 id="{{ location.location_id }}_title" class="card-title text-black">{{ location.name }}</h2>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="card image-full w-auto inline items-center" role="button">
+                                <figure>
+                                    {% if location.image %}
+                                        <img id="{{ location.location_id }}_card" src="{% static 'clueless/images/'|add:location.image %}"
+                                             alt="{{ location.name }}"
+                                             class="location-image w-full h-full object-cover opacity-55 rounded-lg">
+                                    {% endif %}
+                                </figure>
+                                <div class="card-body" id="{{ location.location_id }}">
+                                    <h2 id="{{ location.location_id }}_title" class="card-title text-black">{{ location.name }}</h2>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
           </div>
-          <div id="player-log" class="container mx-auto overflow-auto">
-            <!-- Render game log messages from javascript -->
+          <div class="col-autocol-span-1">
+  
+            <div id="player-log" class="container mx-auto overflow-auto max-h-dvh">
+                <div id = "player-log-header" class="label">
+                    <span class="text-xl"> Game Log </span>
+                </div>
+                <!-- Render game log messages from javascript -->
+
+            </div>
           </div>
-        </div>
       </div>
     </div>
 
@@ -193,7 +204,7 @@
         // Disable "End Turn" button
         const endTurnButton = document.querySelector('#end-turn');
         endTurnButton.disabled = true;
-        
+
         // Re-enable all location buttons
         enableAllMoves();
     };
@@ -206,9 +217,9 @@
             'subtype': 'character_locations',
         }));
     });
-    
+
     // Resize game board and player log
-    
+
     function resizeBoard() {
         // set gameboard and chat log heights
         let emptyHeight = window.innerHeight;
@@ -221,30 +232,44 @@
 
         let controlContainer = document.getElementById("control-container");
         let windowWidth = window.innerWidth;
+        
+        // remove any prior adjustments before calculation
+        controlContainer.style.marginRight = "";
+        controlContainer.classList.remove("pl-4");
+        document.getElementById("notebook-list").style.width = "";
+        controlContainer.style.width = windowWidth + "px";
+        
         if (document.getElementById("detective-notebook").checked) {
-            // adjust width if notebook is open
-            controlContainer.style.marginRight = document.getElementById("notebook-list").clientWidth + "px";
-            controlContainer.classList.add("pl-4");
-            windowWidth -= document.getElementById("notebook-list").clientWidth;
-            controlContainer.style.width = windowWidth + "px";
-        } else {
-            // remove adjustments if notebook is closed
-            controlContainer.style.marginRight = "";
-            controlContainer.classList.remove("pl-4");
-            controlContainer.style.width = windowWidth + "px";
+            let notebookSize = document.getElementById("notebook-list").clientWidth + 32; // account for notebook's 2*16px padding
+            if (windowWidth - controlContainer.clientWidth - 2 * notebookSize < 0) {
+                // not enough space on screen, make room for notebook
+                controlContainer.style.marginRight = notebookSize + "px";
+                controlContainer.classList.add("pl-4");
+                windowWidth -= document.getElementById("notebook-list").clientWidth;
+                controlContainer.style.width = windowWidth + "px";
+            } else {
+                // enough space on screen, expand notebook to fill empty space
+                document.getElementById("notebook-list").style.width = Math.trunc((windowWidth - controlContainer.clientWidth) / 2 - 32) + "px";
+            }
         }
         // set gameboard and chat log widths
         windowWidth = document.getElementById("control-container").clientWidth;
-        boardContainer.style.width = Math.trunc(windowWidth * .66) + "px"
+        // limit gameboard width; prevents excessive horizontal padding
+        boardContainer.style.width = Math.min(Math.trunc(windowWidth * .66), boardContainer.clientHeight) + "px";
         playerLog.style.width = Math.trunc(windowWidth * .33) + "px";
+        
         let childElementWidth = Math.trunc((windowWidth * .66 - 80) / 5); // 80 is the fixed total padding per row
         // set widths for each location
         let boardContainerChildren = boardContainer.children;
         for (let i = 0; i < boardContainerChildren.length; i++) {
-            boardContainerChildren[i].style.width = childElementWidth + "px";
+            if (boardContainerChildren[i].clientHeight > childElementWidth) {
+                boardContainerChildren[i].style.width = childElementWidth + "px";
+            } else {
+                boardContainerChildren[i].style.width = boardContainerChildren[i].clientHeight + "px";
+            }
         }
     }
-    
+
     window.onload = resizeBoard;
     window.onresize = resizeBoard;
 
@@ -264,21 +289,25 @@
         const boardContainer = document.getElementById("game-board");
         let boardContainerChildren = boardContainer.children;
         for (let i = 0; i < boardContainerChildren.length; i++) {
-            if (valid_moves.includes(boardContainerChildren[i].id.replace("_card", ""))) {
+            if (boardContainerChildren[i].children.length < 2) {
+                continue;
+            }
+            let currentCardBody = boardContainerChildren[i].children[1];
+            let currentCardImg = boardContainerChildren[i].children[0].children[0];
+            if (valid_moves.includes(currentCardBody.id)) {
                 // valid move; emphasize element
-                boardContainerChildren[i].style.borderWidth = "10px";
-                boardContainerChildren[i].style.borderColor = "yellow";
-                boardContainerChildren[i].classList.remove("opacity-55")
-                boardContainerChildren[i].classList.add("opacity-85")
+                currentCardImg.style.borderWidth = "10px";
+                currentCardImg.style.borderColor = "yellow";
+                currentCardImg.classList.remove("opacity-55");
+                currentCardImg.classList.add("opacity-85");
             } else {
                 // invalid move; disable and de-emphasize element and children
-                boardContainerChildren[i].disabled = true; // disable card
-                boardContainerChildren[i].classList.remove("opacity-55")
-                boardContainerChildren[i].classList.add("opacity-25")
-                let child_element = boardContainerChildren[i].children[0];
-                child_element.disabled = true; // disable card body
-                child_element = child_element.children[0];
-                child_element.disabled = true; // disable title
+                currentCardImg.classList.add("disabled-tile")
+                currentCardImg.disabled = true; // disable card
+                currentCardImg.classList.remove("opacity-55")
+                currentCardImg.classList.add("opacity-25")
+                currentCardBody.classList.add("disabled-tile") // disable card body
+                currentCardBody.children[0].classList.add("disabled-tile"); // disable title
             }
         }
     }
@@ -290,24 +319,27 @@
         // loop through all location elements
         let boardContainerChildren = boardContainer.children;
         for (let i = 0; i < boardContainerChildren.length; i++) {
-            if (boardContainerChildren[i].disabled) {
-                boardContainerChildren[i].disabled = false; // enable card
-                let child_element = boardContainerChildren[i].children[0];
-                child_element.disabled = false; // enable card-body
-                child_element = child_element.children[0];
-                child_element.disabled = false; // enable title
-                boardContainerChildren[i].classList.remove("opacity-25")
-                boardContainerChildren[i].classList.add("opacity-55")
+            if (boardContainerChildren[i].children.length < 2) {
+                continue;
+            }
+            let currentCardBody = boardContainerChildren[i].children[1];
+            let currentCardImg = boardContainerChildren[i].children[0].children[0];
+            if (currentCardBody.classList.contains("disabled-tile")) {
+                currentCardBody.classList.remove("disabled-tile"); // enable card
+                currentCardBody.children[0].classList.remove("disabled-tile"); // enable title
+                currentCardImg.classList.remove("disabled-tile") // enable image
+                currentCardImg.classList.remove("opacity-25")
+                currentCardImg.classList.add("opacity-55")
             } else {
-                boardContainerChildren[i].classList.remove("opacity-85")
-                boardContainerChildren[i].classList.add("opacity-55")
-                boardContainerChildren[i].style.borderWidth = "";
-                boardContainerChildren[i].style.borderColor = "";
+                currentCardImg.classList.remove("opacity-85")
+                currentCardImg.classList.add("opacity-55")
+                currentCardImg.style.borderWidth = "";
+                currentCardImg.style.borderColor = "";
             }
         }
         disabledLocations = false;
     }
-    
+
     // Log messages from the game session
 
     activitySocket.onmessage = function(e) {
@@ -372,15 +404,15 @@
 
     document.querySelector('#game-board').onclick = function(e) {
         console.log("Clicked " + e.target.id);
-        
-        if (e.target.disabled) {
+
+        if (e.target.classList.contains("disabled-tile")) {
             return;
         }
-        
+
         var location = e.target.id;
         // if clicked on card, get child element
         if (e.target.id.includes('_card')) {
-            location = e.target.children[0].id;
+            location = e.target.id.replace('_card', '');
         } else if (e.target.id.includes('_title')) {
             location = e.target.parentElement.id;
         }
@@ -395,8 +427,6 @@
             "type": "status.update"
         }));
     };
-
-
 
     // User Session Websocket
 
@@ -507,6 +537,29 @@
 
 
 </script>
+
+<style>
+    .location-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .card {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+        border-radius: 8px;
+    }
+
+    .card-body {
+        text-align: center;
+        padding: 8px;
+    }
+</style>
 
 {% endblock %}
         
