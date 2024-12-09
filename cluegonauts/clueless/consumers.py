@@ -3,6 +3,7 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 import requests
 from django.urls import reverse
+from clueless.classes import CharacterHandler
 from clueless.utils import char_id_to_name, location_id_to_name
 
 
@@ -60,7 +61,16 @@ class GamePlayersConsumer(WebsocketConsumer):
             self.handle_accusation(text_data_json)
 
         elif text_data_json["subtype"] == "send_message":
-            self.handle_message(text_data_json)
+            message = text_data_json["message"]
+            char_id = text_data_json["char_id"]
+            sender = CharacterHandler().get_character_by_id(char_id)
+            char_icon = sender.image
+            char_name = sender.name
+            self.send(text_data=json.dumps({"message": message, 
+                                            "char_icon": char_icon, 
+                                            "char_name": char_name,
+                                            "p2p": True,
+                                            "char_id": char_id}))
 
         elif text_data_json["subtype"] == "character_locations":
             self.get_char_locations()
@@ -279,14 +289,6 @@ class GamePlayersConsumer(WebsocketConsumer):
                                                   "message": "You cannot make any more accusations.", 
                                                   "success": success}
                 )
-
-    def handle_message(self,event):
-        # Notify all players with group message
-        async_to_sync(self.channel_layer.group_send)(
-            "gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message",
-                                    "message":  event["message"]}
-                                    )
-
 
     def player_move(self, event):
         """
