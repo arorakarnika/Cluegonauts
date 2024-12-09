@@ -5,3 +5,6 @@ cluegonauts/clueless/__pycache__/*
 cluegonauts/clueless/migrations/__pycache__/*
 
 cluegonauts/db.sqlite3
+cluegonauts/clueless/.DS_Store
+.DS_Store
+
