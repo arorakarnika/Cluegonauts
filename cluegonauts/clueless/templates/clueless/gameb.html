@@ -8,8 +8,8 @@
   <div class="drawer drawer-end">
     <input id="detective-notebook" type="checkbox" class="drawer-toggle" />
     <div id="control-container" class="container mx-auto drawer-content">
-      <button class="btn btn-primary" onclick="player_suggestion.showModal()">Make a Suggestion</button>
-      <button id="accuse_button" class="btn btn-primary" onclick="player_accusation.showModal()">Make an Accusation</button>
+      <button id="suggest-button" class="btn btn-primary" disabled onclick="player_suggestion.showModal()">Make a Suggestion</button>
+      <button id="accuse_button" class="btn btn-primary" disabled  onclick="player_accusation.showModal()">Make an Accusation</button>
       <button class="btn btn-primary" onclick="card_carousel.showModal()">View Your Cards</button>
       <button onclick="toggleNotebook()" class="btn btn-primary">Toggle Detective Notebook</button>
       <button class="btn btn-primary" id="end-turn" class="btn btn-error" disabled>End Turn</button>
@@ -359,7 +359,8 @@
         } else if (data.message == "character_locations") {
 
             const charLocIcons = data.char_loc_icons;
-            
+
+            // for each char_id and location_id pair, add the character icon to the location, remove from previous location if different
             for (const [charID, charLocData] of Object.entries(charLocIcons)) {
                 const charLocation = charLocData[0];
                 const charIconPath = charLocData[1];
@@ -387,14 +388,8 @@
                     console.error('Element with ID ' + charLocation + ' not found.');
                 }
 
-                if (disabledLocations) {
-                    // re-enable all locations if player selects a valid move
-                    enableAllMoves();
-                }
                 
             };
-
-            // for each char_id and location_id pair, add the character icon to the location, remove from previous location if different
             
         } else if ("p2p" in data) {
             const senderID = data["char_id"];
@@ -471,11 +466,37 @@
             // Disable "Make Accusation" button
             const accusationButton = document.querySelector('#accuse_button');
             accusationButton.disabled = true;
+            accusationButton.classList.add('failed-accusation') // Add class to prevent enabling after failed accusation
         }
         if ("unlock_turn" in data) {
             // Enable "End Turn" button
             const endTurnButton = document.querySelector('#end-turn');
             endTurnButton.disabled = false;
+
+            // If player was moved by a suggestion, allow suggestions in current location
+            const wasLastMoveSuggested = data["last_move_suggest"];
+            if (wasLastMoveSuggested) {
+                const currentLoc = data["current_loc"];
+                const suggestionButton = document.querySelector('#suggest-button');
+                suggestionButton.disabled = false;
+                const suggestionForm = document.querySelector('#player_suggestion form');
+                const locationChocies = suggestionForm.location;
+                for (let i = 0; i < locationChocies.length; i++) {
+                    if (locationChocies[i].value !== currentLoc) {
+                        locationChocies[i].disabled = true;
+                    }
+            }
+            }
+
+            // Enable Accusation button if failed-accusation class is not present
+            const accusationButton = document.querySelector('#accuse_button');
+            if (!accusationButton.classList.contains('failed-accusation')) {
+                accusationButton.disabled = false;
+            }
+
+            // Enable moves if not already enabled
+            enableAllMoves();
+
         }
         if ("move_fail" in data) {
             disableInvalidMoves(data["valid_locations"]);
@@ -483,6 +504,25 @@
         if ("welcome_message" in data) {
             let characterLabel = document.getElementById("selected-character-name");
             characterLabel.innerText = data["char_name"];
+        }
+        if ("lock_move" in data) {
+            // Unlock suggestion button
+            const suggestionButton = document.querySelector('#suggest-button');
+            suggestionButton.disabled = false;
+
+            // Limit suggestion to moved location
+            const movedLocation = data["lock_move"];
+            // Set movedLocation as the only option for suggestion/ accusation
+            const suggestionForm = document.querySelector('#player_suggestion form');
+            const locationChocies = suggestionForm.location;
+            for (let i = 0; i < locationChocies.length; i++) {
+                if (locationChocies[i].value !== movedLocation) {
+                    locationChocies[i].disabled = true;
+                }
+            }
+            // Disable any additional moves, only one move is allowed per turn
+            // Will be re-enabled on unlock_turn
+            disableInvalidMoves([]);
         }
     };
 
@@ -503,6 +543,10 @@
         }));
         suggestionForm.reset();
         suggestionModal.close();
+
+        // Disable suggestion button
+        const suggestionButton = document.querySelector('#suggest-button');
+        suggestionButton.disabled = true;
     };
 
     // Handle disprove form suggestion

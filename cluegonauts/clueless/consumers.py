@@ -52,7 +52,7 @@ class GamePlayersConsumer(WebsocketConsumer):
             async_to_sync(self.channel_layer.group_send)(
                     f"gameroom_{text_data_json['data']['actor']}_session", 
                     {"type": "status.update", 
-                     "message": f'{char_name} showed you a card: {text_data_json["data"]["card"]}',
+                     "message": f'{char_name} showed you a card: {(text_data_json["data"]["card"]).replace("_", " ").title()}', 
                      "success": True}
                 )
             self.send(text_data=json.dumps({"message": f"{char_name} disproved the suggestion"}))
@@ -309,7 +309,8 @@ class GamePlayersConsumer(WebsocketConsumer):
                 f"gameroom_{char_id}_session", 
                 {"type": "status.update", 
                  "message": data["message"],
-                 "success": True}
+                 "success": True,
+                 "lock_move": move_location}
             )
             async_to_sync(self.channel_layer.group_send)(
                 "gameroom_gameroom", {
@@ -352,9 +353,14 @@ class GamePlayersConsumer(WebsocketConsumer):
         if response.status_code == 200:
             data = response.json()
             current_turn = data["current_turn"]
+            last_move_suggest = data["last_move_suggest"]
+            current_loc = data["current_loc"]
             # Unlock the turn for the next player
             async_to_sync(self.channel_layer.group_send)(
-                f"gameroom_{current_turn}_session", {"type": "unlock.turn", "message": data["message"]}
+                f"gameroom_{current_turn}_session", {"type": "unlock.turn", 
+                                                     "message": data["message"], 
+                                                     "last_move_suggest": last_move_suggest,
+                                                     "current_loc": current_loc}
             )
             # Notify all players of the next player
             async_to_sync(self.channel_layer.group_send)(
@@ -385,7 +391,10 @@ class PlayerNotificationConsumer(WebsocketConsumer):
         )
 
     def unlock_turn(self, event):
-        self.send(text_data=json.dumps({"message": "It is your turn", "unlock_turn": True}))
+        self.send(text_data=json.dumps({"message": "It is your turn", 
+                                        "unlock_turn": True, 
+                                        "last_move_suggest": event.get("last_move_suggest"),
+                                        "current_loc": event.get("current_loc")}))
 
     def player_init(self, char_id):
         # get the player cards
@@ -421,6 +430,8 @@ class PlayerNotificationConsumer(WebsocketConsumer):
         if event.get("move_fail"):
             text_data.update({"move_fail": event["move_fail"],
                               "valid_locations": event["valid_locations"]})
+        if event.get("lock_move"):
+            text_data.update({"lock_move": event["lock_move"]})
         self.send(text_data=json.dumps(text_data))
 
     def accusation_fail(self, event):
