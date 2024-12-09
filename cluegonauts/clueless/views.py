@@ -1,4 +1,3 @@
-from email import message
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from injector import inject
@@ -6,8 +5,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 
 from .models import GameSession
 from .classes import CharacterHandler, LocationHandler, CardHandler, currentGameSession
@@ -123,7 +120,7 @@ class SetupGame(APIView):
         # Save the cards to the game session table, creates a new session if session_id is None
         session_id = self.game_session.update_selected_players(selected_players, session_id)
         self.game_session.set_case_file_cards([card.id for card in self.card_handler.case_file], session_id)
-        print(f"Case file cards: {[card.name for card in self.card_handler.case_file]}".center(100, "+"))
+        print(f"Case file cards: {[card.name for card in self.card_handler.case_file]}".center(100, "+")) # noqa:T201
         self.game_session.set_current_turn(selected_players[0], session_id)
         request.session["game_session"] = str(session_id)
 
@@ -283,9 +280,9 @@ class PlayerAccusationView(APIView):
                 break
         message = f"{actor_name} accused {char_name} with a {weapon} in the {location}"
         if correct_accusation:
-            message += f" and it was correct!"
+            message += " and it was correct!"
         else:
-            message += f" and it was incorrect."
+            message += " and it was incorrect."
 
         return Response({
             "success": correct_accusation, 

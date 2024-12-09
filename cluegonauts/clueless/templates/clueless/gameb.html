@@ -70,7 +70,11 @@
                 <!-- Render game log messages from javascript -->
 
             </div>
+            <div id="send-message">
+              <input type="text" id="a_message" placeholder="Enter a Message" class="input input-bordered w-full max-w-xs" />
+              <button id="chat-submit" class="btn" onclick="processMessage()">Send</button>
           </div>
+        </div>
       </div>
     </div>
 
@@ -172,7 +176,6 @@
 
     </dialog>
 
-
   {% endblock %}
   
   {% block script %}
@@ -228,7 +231,7 @@
         const boardContainer = document.getElementById("game-board");
         boardContainer.style.height = (emptyHeight - document.getElementById("board-prompt").clientHeight) + "px";
         const playerLog = document.getElementById("player-log");
-        playerLog.style.height = (emptyHeight - document.getElementById("player-log-header").clientHeight) + "px";
+        playerLog.style.height = (emptyHeight - document.getElementById("player-log-header").clientHeight - document.getElementById("send-message").clientHeight) + "px";
 
         let controlContainer = document.getElementById("control-container");
         let windowWidth = window.innerWidth;
@@ -356,7 +359,6 @@
         } else if (data.message == "character_locations") {
 
             const charLocIcons = data.char_loc_icons;
-            console.log(charLocIcons);
             
             for (const [charID, charLocData] of Object.entries(charLocIcons)) {
                 const charLocation = charLocData[0];
@@ -394,9 +396,15 @@
 
             // for each char_id and location_id pair, add the character icon to the location, remove from previous location if different
             
+        } else if ("p2p" in data) {
+            const senderID = data["char_id"];
+            const senderIcon = data["char_icon"];
+            const senderName = data["char_name"];
+            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-image avatar"><div class="w-10 rounded-full"><img src="/static/clueless/images/' + senderIcon + '"/></div></div> <div class="chat-header">' + senderName + '</div><div class="chat-bubble chat-bubble-secondary">' + data.message + '</div></div>';
         } else {
-            playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
+          playerLog.innerHTML += '<div class="chat chat-end"><div class="chat-bubble">' + data.message + '</div></div>';
         }
+
         playerLog.scrollTop = playerLog.scrollHeight;
     };
 
@@ -535,6 +543,25 @@
         suggestionModal.close();
     };
 
+    // Handle sending a message to game log
+
+    // Submit on enter or return key
+    document.getElementById('a_message').onkeyup = function(e){
+        if(e.key == 'Enter'){
+            document.getElementById('chat-submit').click();
+        }
+     };
+    
+    function processMessage() {
+        const charID = window.location.href.split('/').pop();
+        const messageToSend = document.getElementById("a_message").value;
+        activitySocket.send(JSON.stringify({
+                'message': messageToSend,
+                'subtype': 'send_message',
+                'char_id': charID
+        }));
+        document.getElementById("a_message").value = "";
+    };
 
 </script>
 

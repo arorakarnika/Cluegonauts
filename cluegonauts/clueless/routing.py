@@ -1,5 +1,4 @@
 from django.urls import re_path
-import injector
 
 from . import consumers
 
