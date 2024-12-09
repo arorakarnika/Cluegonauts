@@ -29,7 +29,6 @@ class GamePlayersConsumer(WebsocketConsumer):
         """
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
-        print(message)
         char_id  = text_data_json.get("char_selected", None)
         session_id = self.scope["session"].get("game_session", None)
 
@@ -189,7 +188,7 @@ class GamePlayersConsumer(WebsocketConsumer):
             suggestion_correct = data["suggestion_correct"]
             # Notify all players of the suggestion
             async_to_sync(self.channel_layer.group_send)(
-                f"gameroom_gameroom", 
+                "gameroom_gameroom", 
                 {"type": "status.update", 
                  "message": message,
                  "subtype": "send_game_message",
@@ -197,13 +196,13 @@ class GamePlayersConsumer(WebsocketConsumer):
             )
             # Move the player on the game board
             async_to_sync(self.channel_layer.group_send)(
-                f"gameroom_gameroom", {"type": "status.update",
+                "gameroom_gameroom", {"type": "status.update",
                                         "subtype": "character_locations",
                                         "char_loc_icons": data["char_loc_icons"]}
             )
             if suggestion_correct:
                 async_to_sync(self.channel_layer.group_send)(
-                    f"gameroom_gameroom", 
+                    "gameroom_gameroom", 
                     {"type": "status.update", 
                      "message": f"{actor_name} has won the game!",
                      "subtype": "game_over",
@@ -254,7 +253,7 @@ class GamePlayersConsumer(WebsocketConsumer):
             actor = data["actor"]
             actor_name = data["actor_name"]
             async_to_sync(self.channel_layer.group_send)(
-                f"gameroom_gameroom", 
+                "gameroom_gameroom", 
                 {"type": "status.update", 
                  "message": message,
                  "subtype": "send_game_message",
@@ -267,7 +266,7 @@ class GamePlayersConsumer(WebsocketConsumer):
                 )
                 # Send all other players a message that the game is over
                 async_to_sync(self.channel_layer.group_send)(
-                    f"gameroom_gameroom", 
+                    "gameroom_gameroom", 
                     {"type": "status.update", 
                      "message": f"{actor_name} has won the game!",
                      "subtype": "game_over",
@@ -284,7 +283,7 @@ class GamePlayersConsumer(WebsocketConsumer):
     def handle_message(self,event):
         # Notify all players with group message
         async_to_sync(self.channel_layer.group_send)(
-            f"gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message",
+            "gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message",
                                     "message":  event["message"]}
                                     )
 
@@ -304,7 +303,6 @@ class GamePlayersConsumer(WebsocketConsumer):
 
         if response.status_code == 200:
             data = response.json()
-            print(data)
             async_to_sync(self.channel_layer.group_send)(
                 f"gameroom_{char_id}_session", 
                 {"type": "status.update", 
@@ -312,7 +310,7 @@ class GamePlayersConsumer(WebsocketConsumer):
                  "success": True}
             )
             async_to_sync(self.channel_layer.group_send)(
-                f"gameroom_gameroom", {
+                "gameroom_gameroom", {
                     "type": "status.update",
                     "subtype": "send_game_message",
                     "message": f"{char_name} has moved to {location_name}"
@@ -320,7 +318,7 @@ class GamePlayersConsumer(WebsocketConsumer):
             )
             # Move the player on the game board
             async_to_sync(self.channel_layer.group_send)(
-                f"gameroom_gameroom", {"type": "status.update", 
+                "gameroom_gameroom", {"type": "status.update", 
                                        "subtype": "character_locations",
                                        "char_loc_icons": data["char_loc_icons"]}
             )
@@ -358,7 +356,7 @@ class GamePlayersConsumer(WebsocketConsumer):
             )
             # Notify all players of the next player
             async_to_sync(self.channel_layer.group_send)(
-                f"gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message",
+                "gameroom_gameroom", {"type": "status.update", "subtype": "send_game_message",
                                         "message":  data["message"]}
             )
 

@@ -1,7 +1,6 @@
 from .classes import CharacterHandler, LocationHandler, CardHandler, currentGameSession
 from .models import GameSession
 import injector
-from uuid import UUID
 
 class GameStateModule(injector.Module):
     """
