@@ -214,6 +214,13 @@
 
         // Re-enable all location buttons
         enableAllMoves();
+
+        // Disable suggest and accuse buttons if not already disabled
+        const suggestionButton = document.querySelector('#suggest-button');
+        suggestionButton.disabled = true;
+        const accusationButton = document.querySelector('#accuse_button');
+        accusationButton.disabled = true;
+        
     };
 
     // Get player locations once page is loaded
