@@ -521,6 +521,9 @@
             for (let i = 0; i < locationChocies.length; i++) {
                 if (locationChocies[i].value !== movedLocation) {
                     locationChocies[i].disabled = true;
+                } else {
+                    // reset if previously disabled
+                    locationChocies[i].disabled = false;
                 }
             }
             // Disable any additional moves, only one move is allowed per turn

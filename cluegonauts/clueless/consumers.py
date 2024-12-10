@@ -343,7 +343,7 @@ class GamePlayersConsumer(WebsocketConsumer):
                  "message": data["message"],
                  "success": False,
                  "move_fail": True,
-                 "valid_locations": data["valid_locations"]}
+                 "valid_locations": data.get("valid_locations", [])}
             )
 
     def turn_handoff(self, event):
