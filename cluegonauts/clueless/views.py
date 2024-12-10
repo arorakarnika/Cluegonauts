@@ -160,23 +160,27 @@ class PlayerMove(APIView):
 
         location_id = request.data.get('location_id')
         char_id = request.data.get('char_id')
+        char_obj = self.char_handler.get_character_by_id(char_id)
+        location_obj = self.loc_handler.get_location_by_id(location_id)
 
         # Check current player location
-        current_location = self.char_handler.get_character_by_id(char_id).location
+        current_location = char_obj.location
         if current_location.location_id == location_id:
             return Response({"message": "Player is already in this location"}, status=status.HTTP_400_BAD_REQUEST)
         elif location_id not in current_location.connected_location and location_id != current_location.secret_passage_to:
                 connected_location_names = [self.loc_handler.get_location_by_id(connected_id).name for connected_id in current_location.connected_location]
-                return Response({"message": f"Invalid move from {current_location.name} to {self.loc_handler.get_location_by_id(location_id).name}, your choices are {connected_location_names} ",
+                return Response({"message": f"Invalid move from {current_location.name} to {location_obj.name}, your choices are {connected_location_names} ",
                                  "valid_locations": [connected_id for connected_id in current_location.connected_location]}, status=status.HTTP_400_BAD_REQUEST)
-        elif self.loc_handler.get_location_by_id(location_id).is_occupied:
+        elif location_obj.is_occupied:
             return Response({"message": "Location is occupied"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             # Update player location
-            self.char_handler.get_character_by_id(char_id).location = self.loc_handler.get_location_by_id(location_id)
+            char_obj.location = location_obj
+            char_obj.moved_by_suggestion = False # Reset moved by suggestion flag
+            location_obj.is_occupied = True
 
-            return Response({"message": f"You have successfully moved to {self.loc_handler.get_location_by_id(location_id).name}",
-                             "char_loc_icons": {char_id: (location_id, self.char_handler.get_character_by_id(char_id).image)}}, status=status.HTTP_200_OK)
+            return Response({"message": f"You have successfully moved to {location_obj.name}",
+                             "char_loc_icons": {char_id: (location_id, char_obj.image)}}, status=status.HTTP_200_OK)
 
 
 class PlayerCards(APIView):
@@ -218,14 +222,23 @@ class PlayerSuggestionView(APIView):
         actor_name = self.char_handler.get_character_by_id(actor).name
         char_name = self.char_handler.get_character_by_id(character).name
 
+        # In case the actor is making a suggestion after being moved by a suggestion, reset the moved_by_suggestion flag
+        # This should prevent the actor from making another suggestion without moving
+        self.char_handler.get_character_by_id(actor).moved_by_suggestion = False
+
         if not character or not location or not weapon:
             return Response({"error": "Character, location, and weapon are required."}, status=status.HTTP_400_BAD_REQUEST)
         
 
         message = f"{actor_name} suggested {char_name} with a {weapon} in the {location}"
 
+        moved_char = self.char_handler.get_character_by_id(character)
+        moved_location = self.loc_handler.get_location_by_id(location)
+
         # Move the suggested character to the suggested location
-        self.char_handler.get_character_by_id(character).location = self.loc_handler.get_location_by_id(location)
+        moved_char.location = moved_location
+        moved_char.moved_by_suggestion = True
+        moved_location.is_occupied = True
 
         # Find char ids who have the suggested cards
         char_ids_can_disprove = []
@@ -248,7 +261,7 @@ class PlayerSuggestionView(APIView):
                          "chars_can_disprove": char_ids_can_disprove,
                          "suggestion_correct": suggestion_correct,
                          "actor_name": actor_name,
-                         "char_loc_icons": {character: (location, self.char_handler.get_character_by_id(character).image)}}, status=status.HTTP_200_OK)
+                         "char_loc_icons": {character: (location, moved_char.image)}}, status=status.HTTP_200_OK)
     
 class PlayerAccusationView(APIView):
     @inject
@@ -307,8 +320,13 @@ class TurnHandler(APIView):
         next_turn_index = (current_turn_index + 1) % len(selected_players)
         next_turn = selected_players[next_turn_index]
         self.game_session.set_current_turn(next_turn, session_id)
-        message = f"It is {self.char_handler.get_character_by_id(next_turn).name}'s turn"
-        return Response({"current_turn": next_turn, "message": message, "char_name": self.char_handler.get_character_by_id(next_turn).name }, status=status.HTTP_200_OK)
+        next_turn_char = self.char_handler.get_character_by_id(next_turn)
+        message = f"It is {next_turn_char.name}'s turn"
+        return Response({"current_turn": next_turn, 
+                         "message": message, 
+                         "char_name": next_turn_char.name, 
+                         "last_move_suggest": next_turn_char.moved_by_suggestion,
+                         "current_loc": next_turn_char.location.location_id }, status=status.HTTP_200_OK)
     
     def get(self, request):
         session_id = self.current_game_session.session_id
