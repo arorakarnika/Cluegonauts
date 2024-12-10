@@ -9,22 +9,20 @@
 
 </head>
 
-<div class="container mx-auto">
+
     <!--Winner -->
-    
-    <div class="hero">
-        <div class="hero-content text-center">
-          <div class="max-w-md">
-            <h1 class="text-5xl font-bold">Congratulations! The winner is: {{ winner }}</h1>
-          </div>
+
+    <div class="hero bg-base-200 min-h-screen" style="position:absolute">
+      <div class="hero-content text-center">
+        <div class="max-w-md">
+          <h1 class="text-5xl font-bold">Game Over</h1>
+          <p class="py-6">
+            Congratulations, {{ winner }}! You have won the game!
+          </p>
         </div>
       </div>
-    <canvas id="my-canvas">
-
-    </canvas>
-    
-  </div>
-
+    </div>
+<canvas id="my-canvas" width="640" height="480" style="position:absolute"></canvas>
 
 
 
