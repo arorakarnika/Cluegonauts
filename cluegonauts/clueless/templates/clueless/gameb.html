@@ -35,12 +35,12 @@
                                     {% if location.image %}
                                         <img id="{{ location.location_id }}_card" src="{% static 'clueless/images/'|add:location.image %}"
                                              alt="{{ location.name }}"
-                                             class="location-image w-full h-full object-cover opacity-55 rounded-lg">
+                                             class="location-image w-full h-full object-cover opacity-75 rounded-lg">
                                     {% endif %}
                                 </figure>
                                 <div class="card-body" id="{{ location.location_id }}">
 
-                                    <h2 id="{{ location.location_id }}_title" class="card-title text-black">{{ location.name }}</h2>
+                                    <h2 id="{{ location.location_id }}_title" class="card-title text-white font-bold">{{ location.name }}</h2>
                                 </div>
                             </div>
                         {% else %}
@@ -49,11 +49,11 @@
                                     {% if location.image %}
                                         <img id="{{ location.location_id }}_card" src="{% static 'clueless/images/'|add:location.image %}"
                                              alt="{{ location.name }}"
-                                             class="location-image w-full h-full object-cover opacity-55 rounded-lg">
+                                             class="location-image w-full h-full object-cover opacity-75 rounded-lg">
                                     {% endif %}
                                 </figure>
                                 <div class="card-body" id="{{ location.location_id }}">
-                                    <h2 id="{{ location.location_id }}_title" class="card-title text-black">{{ location.name }}</h2>
+                                    <h2 id="{{ location.location_id }}_title" class="card-title text-white font-bold">{{ location.name }}</h2>
                                 </div>
                             </div>
                         {% endif %}
@@ -220,7 +220,7 @@
         suggestionButton.disabled = true;
         const accusationButton = document.querySelector('#accuse_button');
         accusationButton.disabled = true;
-        
+
     };
 
     // Get player locations once page is loaded
@@ -312,14 +312,10 @@
                 // valid move; emphasize element
                 currentCardImg.style.borderWidth = "10px";
                 currentCardImg.style.borderColor = "yellow";
-                currentCardImg.classList.remove("opacity-55");
-                currentCardImg.classList.add("opacity-85");
             } else {
                 // invalid move; disable and de-emphasize element and children
                 currentCardImg.classList.add("disabled-tile")
                 currentCardImg.disabled = true; // disable card
-                currentCardImg.classList.remove("opacity-55")
-                currentCardImg.classList.add("opacity-25")
                 currentCardBody.classList.add("disabled-tile") // disable card body
                 currentCardBody.children[0].classList.add("disabled-tile"); // disable title
             }
@@ -342,11 +338,7 @@
                 currentCardBody.classList.remove("disabled-tile"); // enable card
                 currentCardBody.children[0].classList.remove("disabled-tile"); // enable title
                 currentCardImg.classList.remove("disabled-tile") // enable image
-                currentCardImg.classList.remove("opacity-25")
-                currentCardImg.classList.add("opacity-55")
             } else {
-                currentCardImg.classList.remove("opacity-85")
-                currentCardImg.classList.add("opacity-55")
                 currentCardImg.style.borderWidth = "";
                 currentCardImg.style.borderColor = "";
             }
@@ -533,6 +525,7 @@
             }
             // Disable any additional moves, only one move is allowed per turn
             // Will be re-enabled on unlock_turn
+            enableAllMoves();
             disableInvalidMoves([]);
         }
     };
