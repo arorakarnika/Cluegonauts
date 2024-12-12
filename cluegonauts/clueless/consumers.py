@@ -66,11 +66,14 @@ class GamePlayersConsumer(WebsocketConsumer):
             sender = CharacterHandler().get_character_by_id(char_id)
             char_icon = sender.image
             char_name = sender.name
-            self.send(text_data=json.dumps({"message": message, 
-                                            "char_icon": char_icon, 
-                                            "char_name": char_name,
-                                            "p2p": True,
-                                            "char_id": char_id}))
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name, {"type": "status.update", 
+                                       "subtype": "p2p_message", 
+                                       "message": message,
+                                        "char_icon": char_icon, 
+                                        "char_name": char_name,
+                                        "p2p": True,
+                                        "char_id": char_id} )
 
         elif text_data_json["subtype"] == "character_locations":
             self.get_char_locations()
@@ -110,6 +113,12 @@ class GamePlayersConsumer(WebsocketConsumer):
                 self.send(text_data=json.dumps({"message": "game_over", "message_text": event["message"], "winner": event["actor"]}))
             case "character_locations":
                 self.send(text_data=json.dumps({"message": "character_locations", "char_loc_icons": event["char_loc_icons"]}))
+            case "p2p_message":
+                self.send(text_data=json.dumps({"message": event["message"], 
+                                                "char_icon": event["char_icon"], 
+                                                "char_name": event["char_name"], 
+                                                "p2p": True, 
+                                                "char_id": event["char_id"]}))
 
 
     def select_player(self, event):
@@ -334,7 +343,7 @@ class GamePlayersConsumer(WebsocketConsumer):
                  "message": data["message"],
                  "success": False,
                  "move_fail": True,
-                 "valid_locations": data["valid_locations"]}
+                 "valid_locations": data.get("valid_locations", [])}
             )
 
     def turn_handoff(self, event):
